@@ -296,7 +296,10 @@ export const BASE_CSS = `
   border-color: var(--sf-color-accent); background: var(--_sf-accent-soft); font-weight: 600;
 }
 .sf-option-box {
-  flex: 0 0 auto; width: 19px; height: 19px; border: 2px solid var(--sf-color-border);
+  flex: 0 0 auto; width: 19px; height: 19px;
+  /* A fraction of the text color so the control stays visible on any surface,
+     including translucent presets (glass) where --sf-color-border is near-white. */
+  border: 2px solid color-mix(in srgb, var(--sf-color-fg) 34%, transparent);
   border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
   color: var(--sf-color-accent-fg);
 }

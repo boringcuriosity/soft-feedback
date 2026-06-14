@@ -246,6 +246,9 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
   const appearance: Appearance | undefined = survey.appearance;
   const reduce = prefersReducedMotion();
   const gooey = gooeyGeometry(opts.variant, opts.position);
+  // Inline (embedded) widgets live in document flow; grabbing focus on mount would
+  // yank the page to them and scroll. Only overlay patterns move focus in on open.
+  const isInline = opts.inlineContainer != null;
 
   // Resolve a global theme from appearance — the renderers receive theme only via the survey.
   const globalTheme: ThemeMode | undefined = appearance?.theme;
@@ -526,7 +529,9 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
       outgoing?.el.remove();
       outgoing?.destroy();
       flow.contentEl.replaceChildren(incoming);
-      focusQuestion(handle, q);
+      // Don't steal focus on an inline widget's initial mount (it would scroll the page);
+      // later question transitions are user-driven, so focusing is fine.
+      if (!(isInline && direction === 0)) focusQuestion(handle, q);
       announce(q.prompt);
       return;
     }
@@ -883,9 +888,9 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
     attachKeydown();
     emitShown();
 
-    // Move focus into the widget (APG): first the component handled it; ensure the card has focus
-    // if nothing inside took it.
-    moveFocusIn();
+    // Move focus into the widget (APG) for overlay patterns. Inline widgets stay put so they
+    // never scroll the page to themselves on mount.
+    if (!isInline) moveFocusIn();
 
     // Entrance: a gooey blob morph — the card springs up from its anchor, stretches, and lets its
     // corners bulge before firming back to the resting radius. Reduced-motion safe.
