@@ -402,9 +402,9 @@ export const BASE_CSS = `
   flex-wrap: nowrap; gap: 0; border-radius: var(--sf-radius-sm); overflow: hidden;
   border: 1.5px solid var(--sf-color-border);
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--sf-color-danger) 15%, transparent),
-    color-mix(in srgb, #d8962f 12%, transparent) 55%,
-    color-mix(in srgb, var(--sf-color-success) 17%, transparent));
+    color-mix(in srgb, #ef4444 42%, transparent),
+    color-mix(in srgb, #f59e0b 40%, transparent) 50%,
+    color-mix(in srgb, #22c55e 46%, transparent));
 }
 .sf-scale--number .sf-rating-btn {
   flex: 1 1 0; min-width: 0; height: 48px; padding: 0;
