@@ -25,65 +25,23 @@ const FALLBACK_WORDS = [
   'Very satisfied',
 ] as const;
 
-const INK = '#3b3c49'; // friendly dark for facial features
+// Warm, instantly-legible emoji ramp (very dissatisfied → loved it).
+const REACTION_EMOJI = ['😡', '🙁', '😐', '🙂', '😍'] as const;
 
-/** Pastel mood ramp (coral → amber → mint), matching the emoji-dial's face hue. */
-function emojiMood(t: number): { fill: string; edge: string } {
-  const mix = (a: number[], b: number[], k: number): number[] => a.map((v, i) => Math.round(v + (b[i]! - v) * k));
-  const c = t <= 0.5 ? mix([245, 138, 138], [247, 196, 110], t / 0.5) : mix([247, 196, 110], [120, 209, 137], (t - 0.5) / 0.5);
-  const f = mix(c, [255, 255, 255], 0.68);
-  const e = mix(c, [60, 55, 70], 0.26);
-  return { fill: `rgb(${f[0]}, ${f[1]}, ${f[2]})`, edge: `rgb(${e[0]}, ${e[1]}, ${e[2]})` };
+/** Pick the emoji glyph for a normalized position `t ∈ [0,1]`. */
+function reactionEmoji(t: number): string {
+  const clamped = t < 0 ? 0 : t > 1 ? 1 : t;
+  const i = Math.round(clamped * (REACTION_EMOJI.length - 1));
+  return REACTION_EMOJI[Math.max(0, Math.min(REACTION_EMOJI.length - 1, i))]!;
 }
 
-/**
- * A static emoji face whose mouth reflects `t ∈ [0,1]` (0 = sad, 0.5 = neutral, 1 = happy).
- * The face is a soft *filled* disc whose color comes from the per-button mood vars
- * (`--sf-emoji-fill` / `--sf-emoji-edge`); features are a friendly dark ink, never gray.
- * Decorative (`aria-hidden`); the radio's aria-label carries the meaning.
- */
-function faceSvg(t: number): SVGSVGElement {
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', '0 0 48 48');
-  svg.setAttribute('class', 'sf-emoji-face');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-
-  const ring = document.createElementNS(ns, 'circle');
-  ring.setAttribute('cx', '24');
-  ring.setAttribute('cy', '24');
-  ring.setAttribute('r', '20.5');
-  ring.setAttribute('class', 'sf-emoji-ring');
-  ring.style.fill = 'var(--sf-emoji-fill, #eef0f4)';
-  ring.style.stroke = 'var(--sf-emoji-edge, #d6d9e2)';
-  ring.setAttribute('stroke-width', '2');
-
-  const eyeL = document.createElementNS(ns, 'circle');
-  eyeL.setAttribute('cx', '17.5');
-  eyeL.setAttribute('cy', '20');
-  eyeL.setAttribute('r', '2.6');
-  eyeL.setAttribute('fill', INK);
-  const eyeR = document.createElementNS(ns, 'circle');
-  eyeR.setAttribute('cx', '30.5');
-  eyeR.setAttribute('cy', '20');
-  eyeR.setAttribute('r', '2.6');
-  eyeR.setAttribute('fill', INK);
-
-  // Mouth: a quadratic whose control-point Y swings from a frown (low) to a smile (high).
-  // t=0 → corners down, control up (frown); t=1 → corners up, control down (smile).
-  const cornerY = 31 - (t - 0.5) * 9; // ends rise as t grows
-  const ctrlY = 31 + (t - 0.5) * 24; // control dips below for a smile
-  const mouth = document.createElementNS(ns, 'path');
-  mouth.setAttribute('d', `M16.5 ${cornerY.toFixed(1)} Q24 ${ctrlY.toFixed(1)} 31.5 ${cornerY.toFixed(1)}`);
-  mouth.setAttribute('class', 'sf-emoji-mouth');
-  mouth.setAttribute('fill', 'none');
-  mouth.setAttribute('stroke', INK);
-  mouth.setAttribute('stroke-width', '2.8');
-  mouth.setAttribute('stroke-linecap', 'round');
-
-  svg.append(ring, eyeL, eyeR, mouth);
-  return svg;
+/** A real emoji glyph. Decorative (`aria-hidden`); the radio's aria-label carries meaning. */
+function emojiGlyph(t: number): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = 'sf-emoji-glyph';
+  span.setAttribute('aria-hidden', 'true');
+  span.textContent = reactionEmoji(t);
+  return span;
 }
 
 export function createRatingEmoji(ctx: QuestionComponentContext): QuestionComponentHandle {
@@ -155,12 +113,7 @@ export function createRatingEmoji(ctx: QuestionComponentContext): QuestionCompon
     btn.setAttribute('part', 'rating-button');
     btn.setAttribute('aria-label', labelFor(i));
     btn.setAttribute('aria-checked', 'false');
-    // Pastel mood ramp (coral → amber → mint) as a redundant delight cue; shape
-    // carries the meaning. The fill is the soft face color, the edge its rim.
-    const m = emojiMood(t);
-    btn.style.setProperty('--sf-emoji-fill', m.fill);
-    btn.style.setProperty('--sf-emoji-edge', m.edge);
-    btn.appendChild(faceSvg(t));
+    btn.appendChild(emojiGlyph(t));
 
     btn.addEventListener('click', () => select(i, true, false));
     btn.addEventListener('keydown', (e: KeyboardEvent) => {

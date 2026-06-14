@@ -39,14 +39,20 @@ export const THEME_PRESETS: Record<string, Record<string, string>> = {
    * `glass` — translucent frosted card. Best over imagery; relies on host backdrop-filter.
    */
   glass: {
-    'color-bg': 'rgba(255, 255, 255, 0.72)',
-    'color-surface': 'rgba(255, 255, 255, 0.45)',
-    'color-border': 'rgba(255, 255, 255, 0.6)',
+    'color-bg': 'rgba(255, 255, 255, 0.55)',
+    'color-fg': '#1a1726',
+    'color-muted': '#4b475a',
+    'color-surface': 'rgba(255, 255, 255, 0.4)',
+    'color-border': 'rgba(255, 255, 255, 0.7)',
     'color-accent': '#7c3aed',
     'color-accent-fg': '#ffffff',
-    'radius': '20px',
-    'radius-sm': '13px',
-    'shadow': '0 20px 60px -20px rgb(16 18 35 / 0.45)',
+    'radius': '22px',
+    'radius-sm': '14px',
+    // The real frost: a strong blur + saturation behind the translucent card, a
+    // crisp light rim, and a layered shadow with an inner top highlight.
+    'backdrop': 'blur(22px) saturate(1.8)',
+    'shadow':
+      '0 24px 70px -24px rgb(16 18 35 / 0.5), inset 0 1px 0 rgb(255 255 255 / 0.75), inset 0 0 0 1px rgb(255 255 255 / 0.25)',
   },
 
   /**

@@ -17,24 +17,13 @@ function isRating(q: Question): q is RatingQuestion {
   return q.type === 'rating';
 }
 
-function thumbSvg(up: boolean): SVGSVGElement {
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('class', up ? 'sf-thumb-icon sf-thumb-icon--up' : 'sf-thumb-icon sf-thumb-icon--down');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-  const path = document.createElementNS(ns, 'path');
-  // Thumbs-up glyph; the down variant is the same shape rotated 180° via CSS/transform.
-  path.setAttribute(
-    'd',
-    'M2 10h3.5v11H2V10zm6.5 0 4-7.2c.9.2 1.6 1 1.6 2v3.7H21a2 2 0 0 1 2 2.3l-1.3 7A2 2 0 0 1 19.7 21H8.5V10z',
-  );
-  path.setAttribute('fill', 'currentColor');
-  // The down variant is rotated 180° via CSS (.sf-thumb-icon--down) so it rotates around its
-  // own centre; an SVG `transform` attribute would rotate around (0,0) and fly off-canvas.
-  svg.appendChild(path);
-  return svg;
+/** Real emoji glyph for the thumb — warm, instantly legible, no icon-rotation tricks. */
+function thumbEmoji(up: boolean): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = 'sf-thumb-emoji';
+  span.setAttribute('aria-hidden', 'true');
+  span.textContent = up ? '👍' : '👎';
+  return span;
 }
 
 export function createRatingThumbs(ctx: QuestionComponentContext): QuestionComponentHandle {
@@ -95,7 +84,7 @@ export function createRatingThumbs(ctx: QuestionComponentContext): QuestionCompo
     btn.setAttribute('part', 'rating-button');
     btn.setAttribute('aria-label', item.label);
     btn.setAttribute('aria-checked', 'false');
-    btn.appendChild(thumbSvg(item.up));
+    btn.appendChild(thumbEmoji(item.up));
 
     btn.addEventListener('click', () => select(i, true, false));
     btn.addEventListener('keydown', (e: KeyboardEvent) => {
