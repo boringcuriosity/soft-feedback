@@ -635,3 +635,5 @@ export {
 } from './engine';
 // Tree-shakeable data sinks
 export { webhook, http, consoleSink } from './data';
+// Built-in theme presets (minimal, soft, glass, glass-dark, high-contrast)
+export { THEME_PRESETS } from './theme';
