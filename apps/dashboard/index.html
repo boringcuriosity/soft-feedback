@@ -58,6 +58,18 @@
       .source-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 0.76rem; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 100px; padding: 6px 13px; box-shadow: var(--shadow-sm); }
       .source-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
       .source-chip.is-demo .dot { background: var(--amber); }
+      .source-chip.is-live .dot { background: var(--green); }
+
+      /* ===== Connect bar ===== */
+      .connect-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 1.25rem; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+      .cinput { flex: 1 1 300px; min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; font-family: var(--font-body); font-size: 0.84rem; color: var(--text); outline: none; }
+      .cinput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+      .ctok { flex: 0 1 210px; }
+      .cprimary { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 18px; font-size: 0.82rem; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: background .15s ease; }
+      .cprimary:hover { background: #4338ca; }
+      .connect-hint { flex: 1 1 100%; font-size: 0.74rem; color: var(--text-muted); line-height: 1.5; }
+      .connect-hint a { color: var(--text-secondary); border-bottom: 1px solid var(--border); text-decoration: none; }
+      .connect-hint a:hover { color: var(--accent); border-color: var(--accent); }
 
       /* ===== KPI cards ===== */
       .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr)); gap: 14px; }
@@ -183,6 +195,7 @@
           <button data-period="90" aria-pressed="false">90d</button>
           <button data-period="0" aria-pressed="false">All</button>
         </div>
+        <button class="ghost-btn" id="connectBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg><span class="lbl">Connect</span></button>
         <button class="ghost-btn" id="importBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="lbl">Import</span></button>
         <button class="ghost-btn" id="exportBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="lbl">Export</span></button>
         <input type="file" id="fileInput" accept="application/json" hidden />
@@ -190,6 +203,14 @@
     </header>
 
     <div class="root">
+      <div class="connect-bar" id="connectBar" hidden>
+        <input id="cUrl" class="cinput" placeholder="https://your-api.com/feedback  (any endpoint returning your ResponsePayload[])" />
+        <input id="cTok" class="cinput ctok" placeholder="API key / token (optional)" />
+        <button id="cLoad" class="cprimary">Load</button>
+        <button id="cClear" class="ghost-btn">Use demo</button>
+        <span class="connect-hint">Supabase · Firebase · your API · a JSON file — anything that returns the payloads. Sent over HTTPS, kept in this browser. <a href="https://github.com/boringcuriosity/soft-feedback#dashboard" target="_blank" rel="noopener">recipes ↗</a></span>
+      </div>
+
       <section class="intro">
         <div>
           <h1>Results</h1>
@@ -262,6 +283,7 @@
       const $ = (s) => document.querySelector(s);
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const STORE_KEY = 'soft-feedback:responses';
+      const SRC_KEY = 'soft-feedback:source';
 
       // ---- metric metadata ------------------------------------------------------
       const METRICS = {
@@ -411,13 +433,40 @@
       let ALL = [], RECORDS = [], isDemo = true;
       let period = 30, activeMetric = 'nps', vFilter = 'all', vQuery = '';
 
+      let liveHost = null;
+      function setRecords() {
+        RECORDS = ALL.map(toRecord).filter((r) => r.ts && !isNaN(r.ts));
+        RECORDS.sort((a, b) => a.ts - b.ts);
+      }
       function load() {
         let raw = null;
         try { const s = localStorage.getItem(STORE_KEY); if (s) raw = JSON.parse(s); } catch (_) {}
         if (Array.isArray(raw) && raw.length) { ALL = raw; isDemo = false; }
         else { ALL = seed(); isDemo = true; }
-        RECORDS = ALL.map(toRecord).filter((r) => r.ts && !isNaN(r.ts));
-        RECORDS.sort((a, b) => a.ts - b.ts);
+        setRecords();
+      }
+      const hostOf = (u) => { try { return new URL(u).host; } catch (_) { return 'source'; } };
+      // ponytail: one fetch + envelope-unwrap + dual auth header covers Supabase, Firebase,
+      // any custom API, or a static JSON file — no per-backend adapter. Header auth only; for
+      // query-param auth (e.g. some Firebase setups) put the token in the URL.
+      async function fetchSource(url, token) {
+        const headers = {};
+        if (token) { headers['Authorization'] = /^Bearer /i.test(token) ? token : 'Bearer ' + token; headers['apikey'] = token; }
+        const res = await fetch(url, { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const j = await res.json();
+        const arr = Array.isArray(j) ? j : (j.data || j.results || j.responses || j.records || j.rows || j.value || []);
+        if (!Array.isArray(arr) || !arr.length) throw new Error('No array of responses found in the reply.');
+        return arr;
+      }
+      async function loadRemote(url, token, persist) {
+        ALL = await fetchSource(url, token); isDemo = false; liveHost = hostOf(url); setRecords();
+        if (persist) localStorage.setItem(SRC_KEY, JSON.stringify({ url, token: token || '' }));
+        renderAll();
+      }
+      async function maybeLoadRemote() {
+        let src = null; try { src = JSON.parse(localStorage.getItem(SRC_KEY) || 'null'); } catch (_) {}
+        if (src && src.url) { try { await loadRemote(src.url, src.token, false); } catch (_) {} }
       }
 
       function inPeriod(recs, days) {
@@ -717,8 +766,8 @@
       // ---- render all -----------------------------------------------------------
       function renderAll() {
         const cur = inPeriod(RECORDS, period), prev = prevPeriod(RECORDS, period);
-        $('#sourceChip').className = 'source-chip' + (isDemo ? ' is-demo' : '');
-        $('#sourceText').textContent = isDemo ? 'Demo data · ' + RECORDS.length + ' sample responses' : 'Your data · ' + RECORDS.length + ' responses';
+        $('#sourceChip').className = 'source-chip' + (isDemo ? ' is-demo' : liveHost ? ' is-live' : '');
+        $('#sourceText').textContent = isDemo ? 'Demo data · ' + RECORDS.length + ' sample responses' : (liveHost ? 'Live · ' + liveHost + ' · ' : 'Your data · ') + RECORDS.length + ' responses';
         renderKpis(cur, prev);
         renderMetricPanel(cur);
         renderTrend(cur);
@@ -731,6 +780,25 @@
       $('#kpis').addEventListener('click', (e) => { const c = e.target.closest('.kpi.is-selectable'); if (!c) return; activeMetric = c.dataset.metric; [...$('#kpis').querySelectorAll('.kpi')].forEach((k)=>k.dataset.active = (k.dataset.metric===activeMetric)); renderMetricPanel(inPeriod(RECORDS, period)); renderTrend(inPeriod(RECORDS, period)); });
       $('#vfilter').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; [...e.currentTarget.children].forEach((x)=>x.setAttribute('aria-pressed','false')); b.setAttribute('aria-pressed','true'); vFilter = b.dataset.vf; renderVerbatims(inPeriod(RECORDS, period)); });
       $('#vsearch').addEventListener('input', (e) => { vQuery = e.target.value.trim().toLowerCase(); renderVerbatims(inPeriod(RECORDS, period)); });
+
+      // Connect to any backend via its URL.
+      $('#connectBtn').addEventListener('click', () => {
+        const bar = $('#connectBar'); bar.hidden = !bar.hidden;
+        if (!bar.hidden) {
+          let src = null; try { src = JSON.parse(localStorage.getItem(SRC_KEY) || 'null'); } catch (_) {}
+          if (src) { $('#cUrl').value = src.url || ''; $('#cTok').value = src.token || ''; }
+          $('#cUrl').focus();
+        }
+      });
+      $('#cLoad').addEventListener('click', async () => {
+        const url = $('#cUrl').value.trim(); if (!url) return;
+        const btn = $('#cLoad'); btn.textContent = 'Loading…'; btn.disabled = true;
+        try { await loadRemote(url, $('#cTok').value.trim(), true); $('#connectBar').hidden = true; }
+        catch (e) { alert('Could not load: ' + e.message); }
+        finally { btn.textContent = 'Load'; btn.disabled = false; }
+      });
+      $('#cUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('#cLoad').click(); });
+      $('#cClear').addEventListener('click', () => { localStorage.removeItem(SRC_KEY); liveHost = null; load(); renderAll(); $('#connectBar').hidden = true; });
 
       $('#importBtn').addEventListener('click', () => $('#fileInput').click());
       $('#fileInput').addEventListener('change', (e) => { const f = e.target.files[0]; if (!f) return; const fr = new FileReader(); fr.onload = () => { try { const data = JSON.parse(fr.result); if (Array.isArray(data)) { localStorage.setItem(STORE_KEY, JSON.stringify(data)); load(); renderAll(); } else alert('Expected a JSON array of response payloads.'); } catch (_) { alert('Could not parse that JSON file.'); } }; fr.readAsText(f); });
@@ -746,6 +814,7 @@
 
       load();
       renderAll();
+      maybeLoadRemote(); // if a backend URL was configured, fetch it and replace the demo
     </script>
   </body>
 </html>
