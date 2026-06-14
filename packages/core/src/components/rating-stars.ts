@@ -38,9 +38,11 @@ export function createRatingStars(ctx: QuestionComponentContext): QuestionCompon
   const q = ctx.question;
   if (!isRating(q)) throw new Error('rating-stars: expected a rating question');
 
+  // Stars are a 5-point display by convention. Cap the count at 5 regardless of the
+  // question's scale (NPS 0–10, CES 1–7, …) so `display: 'stars'` is always ≤5 stars.
   const min = 1;
-  const max = Math.max(1, Math.round(q.scale.max));
-  const count = max;
+  const count = Math.min(5, Math.max(1, Math.round(q.scale.max)));
+  const max = count;
 
   const root = document.createElement('div');
   root.className = 'sf-scale sf-scale--stars';

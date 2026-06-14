@@ -7,6 +7,15 @@
 
 <p align="center"><i>We will never make your users hate you.</i></p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/boringcuriosity/soft-feedback/main/assets/widgets-gallery.png" alt="soft-feedback widgets: a draggable emoji-dial CSAT, a one-tap emoji reaction row, a 5-star scale, and inline thumbs helpful" width="820" />
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/boringcuriosity/soft-feedback/main/assets/widgets-glass.png" alt="The same widgets under the frosted glass theme preset over a colourful background" width="720" /><br/>
+  <sub>Every widget, fully themeable — here the built-in <code>glass</code> preset over a gradient.</sub>
+</p>
+
 > **Status: v0, in active development.** Zero runtime dependencies. ~25 KB gzipped.
 
 ---
