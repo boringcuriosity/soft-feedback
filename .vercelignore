@@ -1,0 +1,7 @@
+# Presence of this file makes Vercel ignore .gitignore, so the built
+# packages/core/dist (gitignored) IS uploaded and the playground can load it.
+node_modules
+.git
+*.log
+*.tgz
+.DS_Store

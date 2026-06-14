@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "echo no-install",
+  "buildCommand": "echo no-build",
+  "outputDirectory": ".",
+  "redirects": [
+    { "source": "/", "destination": "/apps/playground/", "permanent": false },
+    { "source": "/dashboard", "destination": "/apps/dashboard/", "permanent": false },
+    { "source": "/playground", "destination": "/apps/playground/", "permanent": false }
+  ]
+}
