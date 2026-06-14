@@ -779,7 +779,18 @@ soft.track('ticket_resolved')</code></pre>
         while (logEl.childElementCount > 40) logEl.lastElementChild.remove();
       }
 
-      softFeedback.init({ onEvent: log });
+      // Persist submitted responses so the companion dashboard (apps/dashboard) can
+      // visualize your real interactions — own-your-data, never leaves the browser.
+      function persist(e) {
+        if (e.type !== 'sent' || !e.payload) return;
+        try {
+          const key = 'soft-feedback:responses';
+          const arr = JSON.parse(localStorage.getItem(key) || '[]');
+          arr.push(e.payload);
+          localStorage.setItem(key, JSON.stringify(arr.slice(-2000)));
+        } catch (_) {}
+      }
+      softFeedback.init({ onEvent: (e) => { log(e); persist(e); } });
 
       // ---- Build the live options object from current builder state ----
       function currentTokens() {
