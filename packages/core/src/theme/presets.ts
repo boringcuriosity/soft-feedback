@@ -56,6 +56,25 @@ export const THEME_PRESETS: Record<string, Record<string, string>> = {
   },
 
   /**
+   * `glass-dark` — the dark-mode companion to `glass`: a translucent smoked card
+   * with light text. Apply this instead of `glass` when the theme is dark.
+   */
+  'glass-dark': {
+    'color-bg': 'rgba(28, 28, 40, 0.5)',
+    'color-fg': '#f4f4f8',
+    'color-muted': '#aeb2c2',
+    'color-surface': 'rgba(255, 255, 255, 0.09)',
+    'color-border': 'rgba(255, 255, 255, 0.16)',
+    'color-accent': '#a78bfa',
+    'color-accent-fg': '#16131f',
+    'radius': '22px',
+    'radius-sm': '14px',
+    'backdrop': 'blur(12px) saturate(1.4)',
+    'shadow':
+      '0 26px 70px -22px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.07)',
+  },
+
+  /**
    * `high-contrast` — accessibility-first: pure black/white, thick borders, strong focus.
    * Meets WCAG AAA contrast for text.
    */

@@ -733,6 +733,7 @@ soft.track('ticket_resolved')</code></pre>
         minimal: { 'color-accent': '#111827', 'color-accent-fg': '#ffffff', 'color-surface': '#ffffff', 'color-border': '#ececef', 'radius': '8px', 'radius-sm': '6px' },
         soft: { 'color-accent': '#6366f1', 'color-surface': '#f5f5ff', 'color-border': '#e6e6f5', 'radius': '18px', 'radius-sm': '12px' },
         glass: { 'color-bg': 'rgba(255,255,255,0.42)', 'color-fg': '#1a1726', 'color-muted': '#4b475a', 'color-surface': 'rgba(255,255,255,0.28)', 'color-border': 'rgba(255,255,255,0.65)', 'color-accent': '#7c3aed', 'radius': '22px', 'radius-sm': '14px', 'backdrop': 'blur(12px) saturate(1.4)', 'shadow': '0 24px 70px -24px rgb(16 18 35 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.22)' },
+        glassDark: { 'color-bg': 'rgba(28,28,40,0.5)', 'color-fg': '#f4f4f8', 'color-muted': '#aeb2c2', 'color-surface': 'rgba(255,255,255,0.09)', 'color-border': 'rgba(255,255,255,0.16)', 'color-accent': '#a78bfa', 'color-accent-fg': '#16131f', 'radius': '22px', 'radius-sm': '14px', 'backdrop': 'blur(12px) saturate(1.4)', 'shadow': '0 26px 70px -22px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.12), inset 0 0 0 1px rgb(255 255 255 / 0.07)' },
         'high-contrast': { 'color-bg': '#ffffff', 'color-fg': '#000000', 'color-muted': '#1f1f1f', 'color-accent': '#0000ee', 'color-border': '#000000', 'color-surface': '#ffffff', 'radius': '6px', 'radius-sm': '4px' },
       };
 
@@ -782,7 +783,9 @@ soft.track('ticket_resolved')</code></pre>
 
       // ---- Build the live options object from current builder state ----
       function currentTokens() {
-        const t = { ...PRESETS[b.preset] };
+        // Glass has a dark companion; use it when the theme is dark so it isn't washed out.
+        const presetKey = (b.preset === 'glass' && b.theme === 'dark') ? 'glassDark' : b.preset;
+        const t = { ...PRESETS[presetKey] };
         if (b.accent.toLowerCase() !== '#4f46e5') t['color-accent'] = b.accent;
         if (b.advColors) {
           t['color-bg'] = b.bg; t['color-fg'] = b.fg; t['color-surface'] = b.surface; t['color-border'] = b.border;

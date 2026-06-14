@@ -509,11 +509,16 @@ export const BASE_CSS = `
 .sf-dial-emoji--pop { animation: sf-dial-emoji-pop .42s cubic-bezier(.34,1.56,.64,1); }
 .sf-dial-track { height: 40px; }
 .sf-dial-ticks { display: none; }
-.sf-dial-track::before { height: 10px; background: var(--sf-color-surface); box-shadow: inset 0 0 0 1px var(--sf-color-border); }
-.sf-dial-fill { height: 10px; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-color-accent) 65%, #fff), var(--sf-color-accent)); }
+/* Rail = a fraction of the text color so the unfilled track is clearly visible on
+   any surface (light, dark, or a translucent glass preset). */
+.sf-dial-track::before { height: 10px; background: color-mix(in srgb, var(--sf-color-fg) 18%, transparent); box-shadow: none; }
+.sf-dial-fill { height: 10px; background: linear-gradient(90deg, color-mix(in srgb, var(--sf-color-accent) 78%, #fff), var(--sf-color-accent)); }
+/* Thumb = a solid accent disc with a card-colored ring, so it reads on every theme
+   (a bg-colored center used to vanish into a dark card). */
 .sf-dial-thumb {
-  width: 28px; height: 28px; border-width: 3px;
-  box-shadow: 0 3px 10px rgba(20,22,45,.28), 0 0 0 0 var(--_sf-accent-soft);
+  width: 28px; height: 28px; border: 3px solid var(--sf-color-bg);
+  background: var(--sf-color-accent);
+  box-shadow: 0 3px 10px rgba(20,22,45,.35), 0 0 0 0 var(--_sf-accent-soft);
   transition: box-shadow .18s ease, transform .12s ease;
 }
 .sf-dial-track:hover .sf-dial-thumb { box-shadow: 0 4px 12px rgba(20,22,45,.3), 0 0 0 6px var(--_sf-accent-soft); }
