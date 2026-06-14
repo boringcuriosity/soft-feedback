@@ -427,27 +427,62 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
 
   // ---- footer (Next/Submit) -----------------------------------------------------------------
   /**
-   * Rating + single-choice questions auto-advance via the component's `onCommit`, so they need
-   * no footer button. Text and multiple-choice questions need an explicit Next/Submit.
+   * Single-choice + most tap-ratings auto-advance via the component's `onCommit`, so they need
+   * no footer button. A button is needed for: text, link, multiple-choice; AND for ratings that
+   * should NOT finish on the gesture — sliders (easy to slip) confirm with a button, and a
+   * last-step rating gets a button plus an inline optional comment instead of submitting on tap.
    */
   function questionNeedsButton(q: Question): boolean {
     if (q.type === 'text') return true;
     if (q.type === 'link') return true;
     if (q.type === 'choice' && q.multiple) return true;
+    if (q.type === 'rating') return q.display === 'emoji-dial' || isLastQuestion(q);
     return false;
   }
 
   function renderFooter(q: Question, isLast: boolean): void {
     flow.footerEl.replaceChildren();
+    flow.footerEl.style.display = '';
     if (!questionNeedsButton(q)) return;
+
+    const isRating = q.type === 'rating';
+    // A rating's confirm UI stays hidden until the user has actually answered, so a
+    // fresh question shows only the rating (no premature/disabled chrome). It reveals
+    // on the first selection — or immediately if the answer is already set (back-nav).
+    const hasValue = runtime.state.responses[q.id] !== undefined;
+
+    if (isRating && isLast) {
+      const comment = document.createElement('textarea');
+      comment.className = 'sf-input sf-textarea soft-inline-comment';
+      comment.rows = 2;
+      comment.placeholder = 'Anything to add? (optional)';
+      comment.setAttribute('part', 'inline-comment');
+      comment.setAttribute('aria-label', 'Optional comment');
+      const existing = runtime.state.responses[`${q.id}:comment`];
+      if (typeof existing === 'string') comment.value = existing;
+      comment.addEventListener('input', () => {
+        runtime.answer(`${q.id}:comment`, comment.value);
+      });
+      flow.footerEl.appendChild(comment);
+    }
 
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'soft-btn soft-btn-primary';
     btn.setAttribute('part', 'submit');
-    btn.textContent = isLast ? 'Submit' : 'Next';
+    btn.textContent = isLast ? 'Submit' : 'Continue';
+    if (isRating) btn.disabled = !hasValue;
     btn.addEventListener('click', () => advance());
     flow.footerEl.appendChild(btn);
+
+    if (isRating && !hasValue) flow.footerEl.style.display = 'none';
+  }
+
+  /** Reveal + enable the rating confirm footer once the user has answered. */
+  function enableFooterSubmit(): void {
+    flow.footerEl.style.display = '';
+    const btn = flow.footerEl.querySelector<HTMLButtonElement>('button.soft-btn');
+    if (btn) btn.disabled = false;
   }
 
   // ---- question rendering + transitions -----------------------------------------------------
@@ -460,10 +495,15 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
       motion: ctx.motion,
       onChange: (value: ResponseValue) => {
         runtime.answer(q.id, value);
+        // A slider fires onChange as it moves; reveal/enable the confirm button.
+        if (questionNeedsButton(q)) enableFooterSubmit();
       },
       onCommit: (value: ResponseValue) => {
         runtime.answer(q.id, value);
-        advance();
+        // Ratings that confirm (slider / last-step) don't auto-advance — the user
+        // presses the button (and may add a comment) so they can't slip past it.
+        if (questionNeedsButton(q)) enableFooterSubmit();
+        else advance();
       },
     });
 
