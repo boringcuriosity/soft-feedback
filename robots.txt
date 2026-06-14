@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://soft-feedback.vercel.app/sitemap.xml
