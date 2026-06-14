@@ -156,10 +156,12 @@ export const BASE_CSS = `
 
 /* ===== Footer + buttons ========================================================= */
 .soft-foot {
-  display: flex; align-items: center; justify-content: flex-end;
+  display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;
   gap: var(--sf-space-sm); margin-top: var(--sf-space-lg);
 }
 .soft-foot:empty { display: none; }
+/* Inline optional comment revealed after a last-step rating; full-width above the button. */
+.soft-inline-comment { width: 100%; min-height: 64px; margin: 0; animation: sf-rise .28s ease both; }
 .soft-btn {
   min-height: 44px; min-width: 88px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -212,12 +214,12 @@ export const BASE_CSS = `
 /* ===== Rating: emoji row ======================================================== */
 .sf-emoji-row { display: flex; gap: var(--sf-space-sm); justify-content: space-between; }
 .sf-emoji-btn {
-  flex: 1 1 0; background: none; border: 0; cursor: pointer; padding: 5px;
-  line-height: 1; border-radius: var(--sf-radius-sm); opacity: .9;
-  transition: transform .18s cubic-bezier(.22,1,.36,1), opacity .18s ease;
+  flex: 1 1 0; background: none; border: 0; cursor: pointer; padding: 7px 5px;
+  line-height: 1; border-radius: var(--sf-radius-sm);
+  transition: transform .18s cubic-bezier(.22,1,.36,1), background-color .18s ease;
 }
-.sf-emoji-btn:hover { opacity: 1; transform: translateY(-2px) scale(1.08); }
-.sf-emoji-btn.is-selected, .sf-emoji-btn[aria-checked="true"] { opacity: 1; transform: scale(1.16); }
+.sf-emoji-btn:hover { transform: translateY(-2px) scale(1.08); }
+.sf-emoji-btn.is-selected, .sf-emoji-btn[aria-checked="true"] { transform: scale(1.16); }
 
 /* ===== Rating: thumbs =========================================================== */
 .sf-scale--thumbs .sf-scale-track, .sf-thumbs {
@@ -442,13 +444,12 @@ export const BASE_CSS = `
 }
 .sf-thumb--down:hover { border-color: var(--sf-color-danger); background: color-mix(in srgb, var(--sf-color-danger) 9%, transparent); }
 
-/* ---- Emoji row: real emoji glyphs ---------------------------------------- */
+/* ---- Emoji row: full-color real emoji, clear selection ------------------- */
 .sf-emoji-glyph { font-size: 34px; line-height: 1; display: block; }
-.sf-emoji-btn { transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .2s ease; }
-.sf-emoji-btn:not(.is-selected):not([aria-checked="true"]) { filter: saturate(.72) opacity(.78); }
-.sf-emoji-btn:hover { transform: translateY(-3px) scale(1.12); filter: none; }
+.sf-emoji-btn { transition: transform .2s cubic-bezier(.34,1.56,.64,1), background-color .2s ease; }
+.sf-emoji-btn:hover { transform: translateY(-3px) scale(1.12); background: color-mix(in srgb, var(--sf-color-accent) 7%, transparent); }
 .sf-emoji-btn.is-selected, .sf-emoji-btn[aria-checked="true"] {
-  filter: none;
+  background: var(--_sf-accent-soft);
   animation: sf-pop .5s cubic-bezier(.34,1.56,.64,1);
 }
 .sf-emoji-btn.is-selected .sf-emoji-glyph, .sf-emoji-btn[aria-checked="true"] .sf-emoji-glyph {
