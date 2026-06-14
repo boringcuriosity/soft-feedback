@@ -205,7 +205,10 @@ export const BASE_CSS = `
 .sf-stars { display: flex; gap: 4px; justify-content: center; }
 .sf-star {
   background: none; border: 0; padding: 4px; line-height: 0; cursor: pointer;
-  color: var(--sf-color-border); transition: transform .15s ease, color .15s ease;
+  /* Unfilled stars: a soft tint of the text colour so they stay visible on light,
+     dark, and glass (where --sf-color-border is near-white and would vanish). */
+  color: color-mix(in srgb, var(--sf-color-fg) 26%, transparent);
+  transition: transform .15s ease, color .15s ease;
 }
 .sf-star .sf-star-icon { width: 34px; height: 34px; display: block; }
 .sf-star:hover { transform: scale(1.12); }

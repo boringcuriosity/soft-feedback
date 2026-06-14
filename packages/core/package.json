@@ -1,7 +1,14 @@
 {
   "name": "soft-feedback",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Soft, delightful, white-label feedback & micro-survey widgets your users actually want to answer. Headless, framework-agnostic, accessible. CSAT, NPS, CES.",
+  "homepage": "https://github.com/boringcuriosity/soft-feedback#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boringcuriosity/soft-feedback.git",
+    "directory": "packages/core"
+  },
+  "bugs": "https://github.com/boringcuriosity/soft-feedback/issues",
   "keywords": [
     "feedback",
     "feedback-widget",
@@ -33,12 +40,19 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepack": "cp ../../README.md ../../LICENSE .",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "tsup": "^8.3.0",
