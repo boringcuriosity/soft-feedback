@@ -50,6 +50,12 @@
       .ghost-btn:hover { color: var(--text); border-color: var(--text-muted); background: var(--card); }
       .ghost-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
       @media (max-width: 760px) { .topbar-inner { gap: .5rem; } .ghost-btn .lbl { display: none; } .brand-sub { display: none; } }
+      /* Phones: let the bar wrap instead of overflowing, and tighten page gutters. */
+      @media (max-width: 540px) {
+        .topbar-inner { flex-wrap: wrap; height: auto; padding: 10px 1.1rem; gap: 8px; }
+        .topbar-spacer { display: none; }
+        .root { padding: 0 1.1rem 3rem; }
+      }
 
       /* ===== Page intro ===== */
       .intro { padding: 2.25rem 0 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -62,6 +68,7 @@
 
       /* ===== Connect bar ===== */
       .connect-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 1.25rem; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+      .connect-bar[hidden] { display: none; } /* author display:flex would otherwise beat the [hidden] UA rule */
       .cinput { flex: 1 1 300px; min-width: 0; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px; font-family: var(--font-body); font-size: 0.84rem; color: var(--text); outline: none; }
       .cinput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
       .ctok { flex: 0 1 210px; }

@@ -89,6 +89,8 @@
         border: 1px solid var(--border); border-radius: 100px; padding: 3px 9px;
       }
       @media (max-width: 640px) { .header-nav .nav-link:not(.is-anchor) { display: none; } }
+      /* On phones, drop the in-page scroll links (content is right there); keep Dashboard. */
+      @media (max-width: 540px) { .header-nav a[href^="#"] { display: none; } }
 
       /* ===== Hero ===== */
       .hero { padding: 5.5rem 0 5rem; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3rem; align-items: center; }
