@@ -46,7 +46,7 @@ let storage: StorageAdapter | null = null;
 let initialized = false;
 
 let baseContext: Context | null = null;
-let globalMotion: NonNullable<SoftConfig['motion']> = 'smooth';
+let globalMotion: NonNullable<SoftConfig['motion']> = 'subtle';
 let globalTheme: SoftConfig['theme'] = 'auto';
 
 function currentUrl(fallback: string): string {
@@ -90,7 +90,7 @@ function present(survey: Survey): void {
 export function init(config: SoftConfig = {}): void {
   storage = config.storage ?? defaultStorage();
   const anonymous = config.anonymous ?? true;
-  globalMotion = config.motion ?? 'smooth';
+  globalMotion = config.motion ?? 'subtle';
   globalTheme = config.theme ?? 'auto';
 
   bus = createBus();

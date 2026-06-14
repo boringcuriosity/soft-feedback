@@ -39,93 +39,16 @@ function isRating(q: Question): q is RatingQuestion {
   return q.type === 'rating';
 }
 
-const VB = 120; // square viewBox
-
-/** A facial expression as numeric control points, all in the 0..VB viewBox space. */
-interface Face {
-  eyeY: number; // vertical center of the eyes
-  eyeR: number; // eye radius
-  eyeSquint: number; // 0 = round, 1 = happy squint (eyes become arcs)
-  browAngle: number; // degrees; negative = angry/sad inner-down, positive = raised
-  browY: number; // brow vertical offset
-  mouthCornerY: number; // y of the mouth's outer corners
-  mouthCtrlY: number; // y of the mouth's center control point
-}
-
-// Three keyframes. The mouth control point crossing the corners is what reads as a smile/frown.
-const SAD: Face = {
-  eyeY: 50,
-  eyeR: 6,
-  eyeSquint: 0,
-  browAngle: -16,
-  browY: 36,
-  mouthCornerY: 86,
-  mouthCtrlY: 70,
-};
-const NEUTRAL: Face = {
-  eyeY: 50,
-  eyeR: 6,
-  eyeSquint: 0,
-  browAngle: 0,
-  browY: 38,
-  mouthCornerY: 80,
-  mouthCtrlY: 80,
-};
-const HAPPY: Face = {
-  eyeY: 49,
-  eyeR: 6,
-  eyeSquint: 0.85,
-  browAngle: 8,
-  browY: 34,
-  mouthCornerY: 74,
-  mouthCtrlY: 100,
-};
-
-const lerp = (a: number, b: number, k: number): number => a + (b - a) * k;
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-function lerpFace(a: Face, b: Face, k: number): Face {
-  return {
-    eyeY: lerp(a.eyeY, b.eyeY, k),
-    eyeR: lerp(a.eyeR, b.eyeR, k),
-    eyeSquint: lerp(a.eyeSquint, b.eyeSquint, k),
-    browAngle: lerp(a.browAngle, b.browAngle, k),
-    browY: lerp(a.browY, b.browY, k),
-    mouthCornerY: lerp(a.mouthCornerY, b.mouthCornerY, k),
-    mouthCtrlY: lerp(a.mouthCtrlY, b.mouthCtrlY, k),
-  };
+// A big, expressive real emoji that snaps to the nearest expression as the dial
+// moves (very dissatisfied → very satisfied). Warm and instantly legible; the
+// continuous SVG morph read as uncanny, so we let a real glyph carry the feeling.
+const DIAL_EMOJI = ['😞', '🙁', '😐', '🙂', '😄'] as const;
+function dialEmoji(t: number): string {
+  const i = Math.round(clamp01(t) * (DIAL_EMOJI.length - 1));
+  return DIAL_EMOJI[Math.max(0, Math.min(DIAL_EMOJI.length - 1, i))]!;
 }
-
-/** Interpolate the three keyframes by `t ∈ [0,1]` (0 sad, 0.5 neutral, 1 happy). */
-function faceAt(t: number): Face {
-  const tt = clamp01(t);
-  return tt <= 0.5 ? lerpFace(SAD, NEUTRAL, tt / 0.5) : lerpFace(NEUTRAL, HAPPY, (tt - 0.5) / 0.5);
-}
-
-/**
- * Pleasant pastel mood ramp for the face fill: coral (sad) → amber (neutral) →
- * mint (happy). The fill is a soft tint of the mood hue; the edge is the same
- * hue pushed darker for a clean rim. This replaces the old danger→success
- * color-mix, which went muddy olive at the midpoint.
- */
-type RGB = [number, number, number];
-const mixRGB = (a: RGB, b: RGB, k: number): RGB => [
-  Math.round(a[0] + (b[0] - a[0]) * k),
-  Math.round(a[1] + (b[1] - a[1]) * k),
-  Math.round(a[2] + (b[2] - a[2]) * k),
-];
-const toRGB = (c: RGB): string => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-const MOOD_SAD: RGB = [245, 138, 138];
-const MOOD_NEU: RGB = [247, 196, 110];
-const MOOD_HAP: RGB = [120, 209, 137];
-function moodAt(t: number): { fill: string; edge: string } {
-  const tt = clamp01(t);
-  const c = tt <= 0.5 ? mixRGB(MOOD_SAD, MOOD_NEU, tt / 0.5) : mixRGB(MOOD_NEU, MOOD_HAP, (tt - 0.5) / 0.5);
-  return { fill: toRGB(mixRGB(c, [255, 255, 255], 0.7)), edge: toRGB(mixRGB(c, [60, 55, 70], 0.28)) };
-}
-
-const NS = 'http://www.w3.org/2000/svg';
-const el = (name: string): SVGElement => document.createElementNS(NS, name);
 
 export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponentHandle {
   const q = ctx.question;
@@ -152,73 +75,11 @@ export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponen
   const root = document.createElement('div');
   root.className = 'sf-dial';
 
-  // The big morphing face.
-  const svg = el('svg') as SVGSVGElement;
-  svg.setAttribute('viewBox', `0 0 ${VB} ${VB}`);
-  svg.setAttribute('class', 'sf-dial-face');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-
-  const ring = el('circle');
-  ring.setAttribute('cx', String(VB / 2));
-  ring.setAttribute('cy', String(VB / 2));
-  ring.setAttribute('r', String(VB / 2 - 6));
-  ring.setAttribute('class', 'sf-dial-face-ring');
-  // fill + stroke are mood-driven, set per frame in renderFace.
-  ring.setAttribute('fill', toRGB(mixRGB(MOOD_NEU, [255, 255, 255], 0.7)));
-  ring.setAttribute('stroke', toRGB(mixRGB(MOOD_NEU, [60, 55, 70], 0.28)));
-  ring.setAttribute('stroke-width', '3');
-
-  const browL = el('path');
-  browL.setAttribute('class', 'sf-dial-brow');
-  browL.setAttribute('fill', 'none');
-  browL.setAttribute('stroke', 'currentColor');
-  browL.setAttribute('stroke-width', '4');
-  browL.setAttribute('stroke-linecap', 'round');
-  const browR = el('path');
-  browR.setAttribute('class', 'sf-dial-brow');
-  browR.setAttribute('fill', 'none');
-  browR.setAttribute('stroke', 'currentColor');
-  browR.setAttribute('stroke-width', '4');
-  browR.setAttribute('stroke-linecap', 'round');
-
-  const eyeL = el('path');
-  eyeL.setAttribute('class', 'sf-dial-eye');
-  eyeL.setAttribute('fill', 'none');
-  eyeL.setAttribute('stroke', 'currentColor');
-  eyeL.setAttribute('stroke-width', '5.5');
-  eyeL.setAttribute('stroke-linecap', 'round');
-  const eyeR = el('path');
-  eyeR.setAttribute('class', 'sf-dial-eye');
-  eyeR.setAttribute('fill', 'none');
-  eyeR.setAttribute('stroke', 'currentColor');
-  eyeR.setAttribute('stroke-width', '5.5');
-  eyeR.setAttribute('stroke-linecap', 'round');
-
-  const mouth = el('path');
-  mouth.setAttribute('class', 'sf-dial-mouth');
-  mouth.setAttribute('fill', 'none');
-  mouth.setAttribute('stroke', 'currentColor');
-  mouth.setAttribute('stroke-width', '5');
-  mouth.setAttribute('stroke-linecap', 'round');
-
-  // Cheeks (blush) — a warm, friendly detail that fades in as the face gets happier.
-  // Decorative only; color carries no meaning (the mouth shape does), so it's a pure delight cue.
-  const cheekL = el('circle');
-  cheekL.setAttribute('class', 'sf-dial-cheek');
-  cheekL.setAttribute('cy', '62');
-  cheekL.setAttribute('r', '8');
-  cheekL.setAttribute('fill', '#F0928F');
-  cheekL.setAttribute('opacity', '0');
-  const cheekR = el('circle');
-  cheekR.setAttribute('class', 'sf-dial-cheek');
-  cheekR.setAttribute('cy', '62');
-  cheekR.setAttribute('r', '8');
-  cheekR.setAttribute('fill', '#F0928F');
-  cheekR.setAttribute('opacity', '0');
-
-  // Cheeks sit behind the face features but above the ring.
-  svg.append(ring, cheekL, cheekR, browL, browR, eyeL, eyeR, mouth);
+  // The big expressive emoji face.
+  const face = document.createElement('div');
+  face.className = 'sf-dial-emoji';
+  face.setAttribute('aria-hidden', 'true');
+  face.textContent = dialEmoji(t);
 
   // The track + thumb (the actual slider control).
   const track = document.createElement('div');
@@ -270,7 +131,7 @@ export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponen
   hi.textContent = q.labels?.max ?? '';
   anchors.append(lo, hi);
 
-  root.append(svg, track, anchors, valueLabel);
+  root.append(face, track, anchors, valueLabel);
 
   /* ----------------------------- value text ----------------------------- */
 
@@ -293,72 +154,20 @@ export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponen
 
   /* ----------------------------- rendering ------------------------------ */
 
-  // Color hue is a redundant cue: shift only the accent, shape carries meaning.
+  let lastEmoji = '';
   const renderFace = (tt: number): void => {
-    const f = faceAt(tt);
-    const cx = VB / 2;
-    const eyeDx = 22;
-
-    // Eyes: when squinting (happy), draw upward arcs; otherwise tiny dots-as-arcs.
-    const eyePath = (centerX: number): string => {
-      const w = 7;
-      const x0 = centerX - w;
-      const x1 = centerX + w;
-      // squint pulls the arc control upward to form a "^"-ish happy eye.
-      const ctrlY = f.eyeY - f.eyeSquint * 9;
-      if (f.eyeSquint < 0.2) {
-        // Open eye: a short vertical segment with round caps reads as a friendly dot.
-        return `M${centerX.toFixed(1)} ${(f.eyeY - 1.7).toFixed(1)} L${centerX.toFixed(1)} ${(f.eyeY + 1.7).toFixed(1)}`;
+    // The emoji snaps to the nearest expression; a quick bounce sells each change.
+    const glyph = dialEmoji(tt);
+    if (glyph !== lastEmoji) {
+      lastEmoji = glyph;
+      face.textContent = glyph;
+      if (!reduced) {
+        face.classList.remove('sf-dial-emoji--pop');
+        void face.offsetWidth; // restart the pop animation
+        face.classList.add('sf-dial-emoji--pop');
       }
-      return `M${x0.toFixed(1)} ${f.eyeY.toFixed(1)} Q${centerX.toFixed(1)} ${ctrlY.toFixed(1)} ${x1.toFixed(1)} ${f.eyeY.toFixed(1)}`;
-    };
-    eyeL.setAttribute('d', eyePath(cx - eyeDx));
-    eyeR.setAttribute('d', eyePath(cx + eyeDx));
-
-    // Brows: short strokes rotated by browAngle around their own center.
-    const browPath = (centerX: number, mirror: number): string => {
-      const half = 9;
-      const ang = (f.browAngle * Math.PI) / 180 * mirror;
-      const dx = Math.cos(ang) * half;
-      const dy = Math.sin(ang) * half;
-      const x0 = centerX - dx;
-      const y0 = f.browY - dy;
-      const x1 = centerX + dx;
-      const y1 = f.browY + dy;
-      return `M${x0.toFixed(1)} ${y0.toFixed(1)} L${x1.toFixed(1)} ${y1.toFixed(1)}`;
-    };
-    browL.setAttribute('d', browPath(cx - eyeDx, 1));
-    browR.setAttribute('d', browPath(cx + eyeDx, -1));
-    // Brows fade out near neutral so the resting face reads calm (just dot eyes +
-    // a soft mouth), and only appear as the expression turns sad or happy.
-    const browVis = Math.min(1, Math.abs(clamp01(tt) - 0.5) * 2.4).toFixed(2);
-    browL.setAttribute('opacity', browVis);
-    browR.setAttribute('opacity', browVis);
-
-    // Mouth: quadratic from left corner through a center control to the right corner.
-    mouth.setAttribute(
-      'd',
-      `M${(cx - 24).toFixed(1)} ${f.mouthCornerY.toFixed(1)} Q${cx.toFixed(1)} ${f.mouthCtrlY.toFixed(1)} ${(cx + 24).toFixed(1)} ${f.mouthCornerY.toFixed(1)}`,
-    );
-
-    // Face fill + rim follow the pastel mood ramp (coral → amber → mint).
-    const mood = moodAt(tt);
-    ring.setAttribute('fill', mood.fill);
-    ring.setAttribute('stroke', mood.edge);
-
-    // Cheeks: stay hidden through sad/neutral, then bloom in as the face turns happy.
-    const cheekX = 30;
-    cheekL.setAttribute('cx', (cx - cheekX).toFixed(1));
-    cheekR.setAttribute('cx', (cx + cheekX).toFixed(1));
-    const blush = Math.max(0, (clamp01(tt) - 0.55) / 0.45); // 0 until t≈0.55, → 1 at happy
-    const cheekOpacity = (blush * blush * 0.4).toFixed(3);
-    cheekL.setAttribute('opacity', cheekOpacity);
-    cheekR.setAttribute('opacity', cheekOpacity);
-
-    // Redundant color cue via a CSS custom property the theme maps to a hue (sad→happy).
-    root.style.setProperty('--sf-dial-t', tt.toFixed(3));
-
-    // Thumb + fill position.
+    }
+    // Thumb + fill follow the live drag position continuously.
     const pct = clamp01(tt) * 100;
     thumb.style.left = `${pct}%`;
     fill.style.width = `${pct}%`;

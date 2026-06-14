@@ -104,6 +104,9 @@ export const BASE_CSS = `
   border-radius: var(--sf-radius);
   box-shadow: var(--sf-shadow);
   padding: var(--sf-space-lg);
+  /* Opt-in frosted glass: the glass preset sets --sf-backdrop; otherwise no-op. */
+  -webkit-backdrop-filter: var(--sf-backdrop, none);
+  backdrop-filter: var(--sf-backdrop, none);
   /* popover/tab host is a pass-through frame (pointer-events:none); re-enable on the card. */
   pointer-events: auto;
   font-family: var(--sf-font);
@@ -228,8 +231,7 @@ export const BASE_CSS = `
   border-radius: 50%; cursor: pointer;
   transition: transform .18s ease, border-color .2s ease, background-color .2s ease, color .2s ease;
 }
-.sf-thumb-icon { width: 26px; height: 26px; display: block; flex: 0 0 auto; }
-.sf-thumb-icon--down { transform: rotate(180deg); transform-origin: center; transform-box: fill-box; }
+.sf-thumb-emoji { font-size: 30px; line-height: 1; display: block; }
 .sf-thumbs button:hover, .sf-thumb:hover {
   transform: translateY(-2px); border-color: var(--sf-color-accent); color: var(--sf-color-fg);
 }
@@ -243,9 +245,9 @@ export const BASE_CSS = `
 
 /* ===== Hero: emoji dial ========================================================= */
 .sf-dial { display: flex; flex-direction: column; align-items: center; gap: var(--sf-space); }
-.sf-dial-face {
-  width: 110px; height: 110px; display: block;
-  color: #3b3c49; /* friendly dark features; the disc fill is mood-driven in JS */
+.sf-dial-emoji {
+  height: 96px; display: flex; align-items: center; justify-content: center;
+  font-size: 80px; line-height: 1; user-select: none;
 }
 .sf-dial-track {
   position: relative; width: 100%; height: 44px; display: flex; align-items: center;
@@ -423,28 +425,34 @@ export const BASE_CSS = `
 .sf-star:hover, .sf-star:focus-visible { transform: scale(1.16) rotate(-5deg); }
 .sf-star.is-selected { animation: sf-pop .5s cubic-bezier(.34,1.56,.64,1); }
 
-/* ---- Thumbs: tactile, success/danger selection --------------------------- */
-.sf-thumb { width: 64px; height: 64px; }
-.sf-thumb-icon { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
-.sf-thumb--up:hover .sf-thumb-icon { transform: translateY(-2px) rotate(-6deg); }
-.sf-thumb--down:hover .sf-thumb-icon { transform: translateY(2px) rotate(-6deg); }
+/* ---- Thumbs: emoji 👍 / 👎, tactile success/danger selection ------------- */
+.sf-thumb { width: 66px; height: 66px; }
+.sf-thumb-emoji { transition: transform .18s cubic-bezier(.34,1.56,.64,1); }
+.sf-thumb:hover .sf-thumb-emoji { transform: scale(1.14); }
 .sf-thumb--up.is-selected, .sf-thumb--up[aria-checked="true"] {
-  border-color: var(--sf-color-success); color: var(--sf-color-success);
-  background: color-mix(in srgb, var(--sf-color-success) 14%, transparent);
+  border-color: var(--sf-color-success);
+  background: color-mix(in srgb, var(--sf-color-success) 16%, transparent);
   animation: sf-pop .5s cubic-bezier(.34,1.56,.64,1);
 }
+.sf-thumb--up:hover { border-color: var(--sf-color-success); background: color-mix(in srgb, var(--sf-color-success) 9%, transparent); }
 .sf-thumb--down.is-selected, .sf-thumb--down[aria-checked="true"] {
-  border-color: var(--sf-color-danger); color: var(--sf-color-danger);
-  background: color-mix(in srgb, var(--sf-color-danger) 14%, transparent);
+  border-color: var(--sf-color-danger);
+  background: color-mix(in srgb, var(--sf-color-danger) 16%, transparent);
   animation: sf-pop .5s cubic-bezier(.34,1.56,.64,1);
 }
+.sf-thumb--down:hover { border-color: var(--sf-color-danger); background: color-mix(in srgb, var(--sf-color-danger) 9%, transparent); }
 
-/* ---- Emoji row: lively faces (mood color set per-button in JS) ------------ */
-.sf-emoji-btn { transition: transform .2s cubic-bezier(.34,1.56,.64,1), filter .2s ease, opacity .2s ease; }
-.sf-emoji-btn:hover { transform: translateY(-3px) scale(1.1); }
-.sf-emoji-btn.is-selected, .sf-emoji-btn[aria-checked="true"] { animation: sf-pop .5s cubic-bezier(.34,1.56,.64,1); }
-.sf-emoji-btn.is-selected .sf-emoji-face, .sf-emoji-btn[aria-checked="true"] .sf-emoji-face {
-  filter: drop-shadow(0 5px 10px rgba(30,30,55,.18));
+/* ---- Emoji row: real emoji glyphs ---------------------------------------- */
+.sf-emoji-glyph { font-size: 34px; line-height: 1; display: block; }
+.sf-emoji-btn { transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .2s ease; }
+.sf-emoji-btn:not(.is-selected):not([aria-checked="true"]) { filter: saturate(.72) opacity(.78); }
+.sf-emoji-btn:hover { transform: translateY(-3px) scale(1.12); filter: none; }
+.sf-emoji-btn.is-selected, .sf-emoji-btn[aria-checked="true"] {
+  filter: none;
+  animation: sf-pop .5s cubic-bezier(.34,1.56,.64,1);
+}
+.sf-emoji-btn.is-selected .sf-emoji-glyph, .sf-emoji-btn[aria-checked="true"] .sf-emoji-glyph {
+  filter: drop-shadow(0 5px 10px rgba(30,30,55,.2));
 }
 
 /* ---- Choice options: crisp rows, clear selection, animated check/dot ------ */
@@ -490,9 +498,11 @@ export const BASE_CSS = `
 .sf-choice-group .sf-option:nth-child(5) { animation-delay: .22s; }
 .sf-choice-group .sf-option:nth-child(n+6) { animation-delay: .27s; }
 
-/* ---- Dial: premium rail, soft face shadow, grabby thumb ------------------- */
-.sf-dial { gap: 22px; }
-.sf-dial-face { filter: drop-shadow(0 10px 22px rgba(28,28,55,.16)); }
+/* ---- Dial: big emoji face that snaps + pops, premium rail ----------------- */
+.sf-dial { gap: 20px; }
+.sf-dial-emoji { filter: drop-shadow(0 6px 10px rgba(20,20,40,.14)); will-change: transform; }
+@keyframes sf-dial-emoji-pop { 0% { transform: scale(.74); } 55% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.sf-dial-emoji--pop { animation: sf-dial-emoji-pop .42s cubic-bezier(.34,1.56,.64,1); }
 .sf-dial-track { height: 40px; }
 .sf-dial-ticks { display: none; }
 .sf-dial-track::before { height: 10px; background: var(--sf-color-surface); box-shadow: inset 0 0 0 1px var(--sf-color-border); }
