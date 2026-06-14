@@ -1,0 +1,993 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>soft-feedback · playground</title>
+    <meta name="description" content="Soft, delightful feedback & micro-survey widgets your users actually want to answer. Design and test one live." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #FAFAF7;
+        --surface: #ffffff;
+        --card: #F2F1EC;
+        --card-hover: #EAEAE4;
+        --card-active: #E2E2DB;
+        --border: #E8E7E2;
+        --border-subtle: #EDECE7;
+        --text: #1a1a1a;
+        --text-secondary: #595959; /* ~6.6:1 on --bg */
+        --text-muted: #6e6e6e;     /* ~4.85:1 on --bg, ~4.5:1 on --card (WCAG AA) */
+        --green: #2E7D32;
+        --green-soft: #E8F5E9;
+        --red: #C62828;
+        --red-soft: #FFEBEE;
+        --amber: #F9A825;
+        --amber-soft: #FFF8E1;
+        --blue: #1565C0;
+        --blue-soft: #E3F2FD;
+        --font-display: 'Bricolage Grotesque', sans-serif;
+        --font-body: 'DM Sans', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+        --radius: 14px;
+        --radius-sm: 10px;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+        --shadow: 0 4px 16px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+        --header-height: 56px;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      * { scrollbar-width: thin; scrollbar-color: var(--card-hover) transparent; }
+      ::-webkit-scrollbar { width: 8px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--card-hover); border-radius: 100px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--card-active); }
+      pre::-webkit-scrollbar { height: 4px; }
+      pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+
+      html { overflow-x: hidden; overflow-y: scroll; scrollbar-gutter: stable; scroll-behavior: smooth; }
+      body {
+        font-family: var(--font-body);
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+      .root { max-width: 1120px; margin: 0 auto; padding: 0 2.5rem; }
+
+      /* ===== Header ===== */
+      .site-header {
+        position: sticky; top: 0; z-index: 100;
+        background: rgba(250, 250, 247, 0.85);
+        -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      .header-inner { max-width: 1120px; margin: 0 auto; padding: 0 2.5rem; display: flex; align-items: center; height: var(--header-height); gap: 2rem; }
+      .header-logo {
+        font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: -0.02em;
+        color: var(--text); background: none; border: none; cursor: pointer; flex-shrink: 0;
+        display: inline-flex; align-items: center; gap: 8px; transition: opacity 0.2s ease;
+      }
+      .header-logo:hover { opacity: 0.7; }
+      .header-logo .mark { width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, #4f46e5 0%, #c026d3 100%); box-shadow: inset 0 1px 1px rgba(255,255,255,0.4); }
+      .header-nav { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+      .nav-link {
+        background: none; border: none; padding: 6px 12px; font-size: 0.82rem; font-weight: 500;
+        color: var(--text-secondary); cursor: pointer; border-radius: 8px; transition: all 0.15s ease;
+        font-family: var(--font-body); text-decoration: none;
+      }
+      .nav-link:hover { color: var(--text); background: var(--card); }
+      .header-tag {
+        font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);
+        border: 1px solid var(--border); border-radius: 100px; padding: 3px 9px;
+      }
+      @media (max-width: 640px) { .header-nav .nav-link:not(.is-anchor) { display: none; } }
+
+      /* ===== Hero ===== */
+      .hero { padding: 4rem 0 3rem; }
+      .hero-badge {
+        display: inline-flex; align-items: center; gap: 6px; background: var(--surface);
+        border: 1px solid var(--border); border-radius: 100px; padding: 6px 14px 6px 10px;
+        font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-mono);
+        margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);
+      }
+      .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s ease-in-out infinite; }
+      @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+      .hero h1 {
+        font-family: var(--font-display); font-size: 4rem; font-weight: 800; letter-spacing: -0.03em;
+        line-height: 1; margin-bottom: 1rem; width: fit-content; color: var(--text); text-wrap: balance;
+      }
+      .hero-description { font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6; max-width: 520px; }
+      .hero-install { margin-top: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+      .install-wrapper { display: inline-flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); overflow: hidden; }
+      .install-wrapper code { font-family: var(--font-mono); font-size: 0.85rem; padding: 10px 16px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+      .install-wrapper code .prompt { color: var(--text-muted); user-select: none; }
+      .copy-btn { background: none; border: none; border-left: 1px solid var(--border); padding: 10px 12px; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; transition: all 0.15s ease; }
+      .copy-btn:hover { background: var(--card); color: var(--text-secondary); }
+      .hero-promise { color: var(--text-muted); font-style: italic; font-size: 0.85rem; width: 100%; }
+
+      /* ===== Two-column ===== */
+      .two-col { display: grid; grid-template-columns: 5fr 7fr; gap: 3rem; padding: 2rem 0 3rem; border-top: 1px solid var(--border); min-width: 0; }
+      .two-col > * { min-width: 0; }
+
+      /* ===== Examples (widgets list) ===== */
+      .examples { position: sticky; top: calc(var(--header-height) + 1.5rem); align-self: start; }
+      .examples-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2rem; }
+      .examples-header h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+      .examples-header span { font-size: 0.8rem; color: var(--text-muted); }
+      .section { margin-bottom: 1.75rem; }
+      .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; margin-bottom: 0.6rem; }
+      .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+      .ex-btn {
+        background: var(--card); color: var(--text); border: none; border-radius: 100px;
+        padding: 9px 16px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.15s ease;
+        font-family: var(--font-body); letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 7px;
+        -webkit-tap-highlight-color: transparent; outline: none;
+      }
+      .ex-btn:hover { background: var(--card-hover); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+      .ex-btn:active { transform: translateY(0); background: var(--card-active); box-shadow: none; }
+      .ex-btn:focus-visible { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #4f46e5; }
+      .ex-btn .emoji { font-size: 0.95rem; line-height: 1; }
+
+      /* ===== Builder ===== */
+      .builder-header { margin-bottom: 2rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+      .builder-header h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+      .builder-header p { color: var(--text-muted); font-size: 0.85rem; }
+      .builder-reset {
+        flex-shrink: 0; background: none; border: 1px solid var(--border); color: var(--text-muted);
+        border-radius: 100px; padding: 6px 14px; font-size: 0.78rem; font-weight: 500; cursor: pointer;
+        transition: all 0.15s ease; font-family: var(--font-body);
+      }
+      .builder-reset:hover { color: var(--text); border-color: var(--text-muted); background: var(--card); }
+      .builder-actions { display: flex; gap: 8px; flex-shrink: 0; }
+      .builder-surprise {
+        display: inline-flex; align-items: center; gap: 6px; background: none;
+        border: 1px solid var(--border); color: var(--text-secondary); border-radius: 100px;
+        padding: 6px 14px; font-size: 0.78rem; font-weight: 500; cursor: pointer;
+        transition: all 0.15s ease; font-family: var(--font-body);
+      }
+      .builder-surprise:hover { color: #4f46e5; border-color: #c7d2fe; background: #EEF2FF; }
+      .builder-surprise .dice { transition: transform 0.4s cubic-bezier(.34,1.56,.64,1); }
+      .builder-surprise:hover .dice { transform: rotate(22deg) scale(1.15); }
+      .builder-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; box-shadow: var(--shadow); width: 100%; min-width: 0; }
+      /* Grouped section headers make the builder scannable */
+      .builder-group { margin: 0 0 1.25rem; display: flex; align-items: baseline; gap: 10px; }
+      .builder-group:not(.first) { margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle); }
+      .builder-group-title { font-family: var(--font-display); font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+      .builder-group-desc { font-size: 0.74rem; color: var(--text-muted); margin-left: auto; text-align: right; }
+      @media (max-width: 520px) { .builder-group-desc { display: none; } }
+      .builder-row { margin-bottom: 1.5rem; }
+      .builder-row:last-child { margin-bottom: 0; }
+      .builder-row.is-hidden { display: none; }
+      .builder-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem; display: block; }
+
+      /* pills */
+      .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+      .pill {
+        padding: 6px 14px; border-radius: 100px; font-size: 0.78rem; font-weight: 500;
+        border: 1.5px solid var(--border); background: var(--surface); color: var(--text-secondary);
+        cursor: pointer; transition: all 0.15s ease; font-family: var(--font-body); text-transform: capitalize;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .pill:hover { border-color: #4f46e5; background: #EEF2FF; }
+      .pill[data-active="true"] { border-color: transparent; background: var(--card-active); color: var(--text); }
+
+      /* inputs */
+      .input {
+        width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+        padding: 9px 14px; font-size: 0.85rem; font-family: var(--font-body); color: var(--text);
+        outline: none; transition: border-color 0.15s ease;
+      }
+      .input:focus { border-color: var(--text-muted); }
+      .input::placeholder { color: var(--text-muted); }
+      textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
+
+      /* toggle */
+      .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .toggle-row-label { font-size: 0.85rem; color: var(--text); }
+      .toggle { width: 40px; height: 22px; background: var(--card); border-radius: 100px; border: none; padding: 2px; cursor: pointer; transition: background 0.2s ease; flex-shrink: 0; }
+      .toggle[data-on="true"] { background: #4f46e5; }
+      .toggle-knob { width: 18px; height: 18px; background: white; border-radius: 50%; transition: transform 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+      .toggle[data-on="true"] .toggle-knob { transform: translateX(18px); }
+
+      /* color + sliders */
+      .stack { display: flex; flex-direction: column; gap: 14px; }
+      .color-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .color-row-label { font-size: 0.85rem; color: var(--text); }
+      .color-group { display: flex; align-items: center; gap: 8px; }
+      .color-input { -webkit-appearance: none; appearance: none; width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; padding: 2px; background: var(--surface); flex-shrink: 0; }
+      .color-input::-webkit-color-swatch-wrapper { padding: 0; }
+      .color-input::-webkit-color-swatch { border: none; border-radius: 5px; }
+      .color-hex { width: 92px; font-family: var(--font-mono); font-size: 0.76rem; padding: 6px 10px; text-align: center; }
+      .slider-item { display: flex; flex-direction: column; gap: 6px; }
+      .slider-head { display: flex; justify-content: space-between; align-items: center; }
+      .slider-label { font-size: 0.78rem; color: var(--text-secondary); }
+      .slider-val { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); background: var(--card); padding: 2px 6px; border-radius: 4px; }
+      .slider { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: var(--card); border-radius: 2px; outline: none; }
+      .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--text); cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.15); transition: transform 0.1s ease; }
+      .slider::-webkit-slider-thumb:hover { transform: scale(1.15); }
+      .slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--text); cursor: pointer; border: none; }
+      .field-hint { font-size: 0.72rem; line-height: 1.45; color: var(--text-muted); }
+
+      /* fire */
+      .fire-btn { position: relative; width: 100%; padding: 12px; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s ease; }
+      .fire-btn:hover { background: #333; box-shadow: var(--shadow); }
+      .fire-btn:active { background: #444; }
+      .fire-kbd { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-family: var(--font-mono); font-size: 0.72rem; color: rgba(255,255,255,0.45); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 2px 7px; pointer-events: none; }
+
+      /* generated code */
+      .builder-code { margin-top: 1.25rem; position: relative; }
+      .code-copy-btn { position: absolute; top: 10px; right: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 0.7rem; color: var(--text-muted); cursor: pointer; transition: all 0.15s ease; z-index: 1; }
+      .code-copy-btn:hover { background: var(--card-hover); color: var(--text-secondary); }
+      pre { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; overflow-x: auto; font-size: 0.78rem; line-height: 1.7; color: var(--text-secondary); box-shadow: var(--shadow-sm); max-width: 100%; }
+      code { font-family: var(--font-mono); }
+      .inline-code { background: var(--card); padding: 2px 7px; border-radius: 5px; font-size: 0.78rem; color: var(--text); font-family: var(--font-mono); font-weight: 500; }
+
+      /* ===== Lower two-col (helpful + log) ===== */
+      .panels { display: grid; grid-template-columns: 1fr; gap: 1.5rem; padding: 0 0 3rem; }
+      @media (min-width: 720px) { .panels { grid-template-columns: 1fr 1fr; gap: 1.5rem; } }
+      .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; box-shadow: var(--shadow-sm); min-width: 0; }
+      .panel h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; margin-bottom: 1rem; }
+      #log { font: 12px/1.6 var(--font-mono); max-height: 240px; overflow: auto; color: var(--text-secondary); }
+      #log .log-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; animation: logIn 0.3s cubic-bezier(.22,1,.36,1); }
+      @keyframes logIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+      #log .ts { color: var(--text-muted); flex: 0 0 auto; }
+      #log .meta { color: var(--text); opacity: 0.75; }
+      .log-pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; flex: 0 0 auto; }
+      .log-pill.shown { background: var(--blue-soft); color: var(--blue); }
+      .log-pill.sent { background: var(--green-soft); color: var(--green); }
+      .log-pill.dismissed { background: var(--red-soft); color: var(--red); }
+      .log-pill.abandoned { background: var(--amber-soft); color: #8D6E00; }
+      .empty { color: var(--text-muted); font-style: italic; }
+
+      /* ===== Docs ===== */
+      .docs { padding: 3.5rem 0 5rem; border-top: 1px solid var(--border); }
+      .docs-header { margin-bottom: 3rem; }
+      .docs-header h2 { font-family: var(--font-display); font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+      .docs-header p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+      .doc-section { margin-bottom: 2.5rem; display: grid; grid-template-columns: 160px 1fr; gap: 2rem; min-width: 0; }
+      .doc-section-label { padding-top: 2px; }
+      .doc-section-label .doc-number { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-muted); }
+      .doc-section-label h3 { font-family: var(--font-display); font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+      .doc-content { min-width: 0; }
+      .doc-content p { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.75rem; }
+      .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .prop-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+      .prop-table th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 10px 14px; background: var(--bg); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+      .prop-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+      .prop-table tr:last-child td { border-bottom: none; }
+      .prop-table td:first-child { font-family: var(--font-mono); color: var(--text); font-weight: 500; font-size: 0.76rem; white-space: nowrap; }
+
+      /* ===== Footer ===== */
+      .site-footer { text-align: center; padding: 2rem 0 3rem; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--text-muted); }
+      .site-footer b { color: var(--text-secondary); font-weight: 600; }
+
+      /* ===== Responsive ===== */
+      @media (max-width: 840px) {
+        .two-col { grid-template-columns: 1fr; gap: 2rem; }
+        .examples { position: static; }
+      }
+      @media (max-width: 640px) {
+        .root { padding: 0 1.25rem; }
+        .header-inner { padding: 0 1.25rem; }
+        .hero { padding: 2.5rem 0 2rem; }
+        .hero h1 { font-size: 2.5rem; }
+        .hero-description { font-size: 0.95rem; }
+        .builder-card { padding: 1.25rem; }
+        .doc-section { grid-template-columns: 1fr; gap: 0.75rem; }
+        .doc-section-label { display: flex; align-items: center; gap: 8px; }
+        .doc-section-label .doc-number { order: -1; }
+        .prop-table { min-width: 460px; }
+      }
+
+      /* ===== Keyboard focus: a consistent ring on every interactive control ===== */
+      .pill:focus-visible, .toggle:focus-visible, .fire-btn:focus-visible,
+      .builder-reset:focus-visible, .builder-surprise:focus-visible,
+      .copy-btn:focus-visible, .code-copy-btn:focus-visible, .color-input:focus-visible,
+      .slider:focus-visible, .ex-btn:focus-visible, .nav-link:focus-visible, .header-logo:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #4f46e5;
+      }
+      .input:focus-visible {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px color-mix(in srgb, #4f46e5 22%, transparent);
+      }
+      .slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, #4f46e5 32%, transparent); }
+
+      /* ===== Reduced motion: tame the page's own motion (the widgets handle their own) ===== */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== Header ===== -->
+    <header class="site-header">
+      <div class="header-inner">
+        <button class="header-logo" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+          <span class="mark"></span>soft-feedback
+        </button>
+        <nav class="header-nav">
+          <a class="nav-link is-anchor" href="#widgets">Widgets</a>
+          <a class="nav-link is-anchor" href="#builder">Builder</a>
+          <a class="nav-link is-anchor" href="#docs">Docs</a>
+          <span class="header-tag">v0</span>
+        </nav>
+      </div>
+    </header>
+
+    <div class="root">
+      <!-- ===== Hero ===== -->
+      <section class="hero">
+        <div class="hero-badge"><span class="dot"></span> in active development</div>
+        <h1>soft-feedback</h1>
+        <p class="hero-description">
+          Soft, delightful feedback &amp; micro-survey widgets your users actually want to answer.
+          Headless, white-label, accessible. Design one live below.
+        </p>
+        <div class="hero-install">
+          <div class="install-wrapper">
+            <code><span class="prompt">$</span> npm i soft-feedback</code>
+            <button class="copy-btn" id="installCopy" aria-label="Copy install command">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+          <span class="hero-promise">“We will never make your users hate you.”</span>
+        </div>
+      </section>
+
+      <!-- ===== Widgets + Builder ===== -->
+      <div class="two-col" id="widgets">
+        <!-- Widgets quick-list -->
+        <div class="examples">
+          <div class="examples-header">
+            <h2>Widgets</h2>
+            <span>Click to preview</span>
+          </div>
+          <div class="section">
+            <div class="section-label">Ratings &amp; Metrics</div>
+            <div class="buttons">
+              <button class="ex-btn" data-fire="csat"><span class="emoji">🫧</span>CSAT</button>
+              <button class="ex-btn" data-fire="nps"><span class="emoji">📣</span>NPS</button>
+              <button class="ex-btn" data-fire="ces"><span class="emoji">🪶</span>CES</button>
+              <button class="ex-btn" data-fire="reaction"><span class="emoji">✨</span>Reaction</button>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-label">Choice &amp; Exit</div>
+            <div class="buttons">
+              <button class="ex-btn" data-fire="pmf"><span class="emoji">🧪</span>PMF probe</button>
+              <button class="ex-btn" data-fire="churn"><span class="emoji">👋</span>Churn catcher</button>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-label">Always-on &amp; Inline</div>
+            <div class="buttons">
+              <button class="ex-btn" data-fire="helpful"><span class="emoji">👍</span>Helpful?</button>
+              <button class="ex-btn" data-fire="tab"><span class="emoji">💬</span>Feedback tab</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Builder -->
+        <div id="builder">
+          <div class="builder-header">
+            <div>
+              <h2>Builder</h2>
+              <p>Configure a widget, then hit Fire to preview it live.</p>
+            </div>
+            <div class="builder-actions">
+              <button type="button" class="builder-surprise" id="surpriseBtn"><span class="dice">🎲</span> Surprise me</button>
+              <button type="button" class="builder-reset" id="resetBtn">Reset</button>
+            </div>
+          </div>
+
+          <div class="builder-card">
+            <div class="builder-group first">
+              <span class="builder-group-title">Content</span>
+              <span class="builder-group-desc">What you ask &amp; how it reads</span>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Widget</div>
+              <div class="pills" data-group="widget" role="group" aria-label="Widget type">
+                <button class="pill" data-val="csat">csat</button>
+                <button class="pill" data-val="nps">nps</button>
+                <button class="pill" data-val="ces">ces</button>
+                <button class="pill" data-val="reaction">reaction</button>
+                <button class="pill" data-val="helpful">helpful</button>
+                <button class="pill" data-val="pmf">pmf</button>
+                <button class="pill" data-val="churn">churn</button>
+                <button class="pill" data-val="tab">tab</button>
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Question</div>
+              <input class="input" id="question" aria-label="Question prompt" />
+            </div>
+
+            <div class="builder-row" data-show="rating">
+              <div class="builder-label">Rating Display</div>
+              <div class="pills" data-group="display" role="group" aria-label="Rating display">
+                <button class="pill" data-val="number">number</button>
+                <button class="pill" data-val="emoji">emoji</button>
+                <button class="pill" data-val="stars">stars</button>
+                <button class="pill" data-val="emoji-dial">emoji-dial</button>
+                <button class="pill" data-val="thumbs">thumbs</button>
+              </div>
+            </div>
+
+            <div class="builder-group">
+              <span class="builder-group-title">Placement &amp; motion</span>
+              <span class="builder-group-desc">Where it appears &amp; how it moves</span>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Pattern</div>
+              <div class="pills" data-group="pattern" role="group" aria-label="Render pattern">
+                <button class="pill" data-val="popover">popover</button>
+                <button class="pill" data-val="modal">modal</button>
+                <button class="pill" data-val="banner">banner</button>
+              </div>
+            </div>
+
+            <div class="builder-row" data-show="position">
+              <div class="builder-label">Position</div>
+              <div class="pills" data-group="position" role="group" aria-label="Position">
+                <button class="pill" data-val="bottom-right">bottom-right</button>
+                <button class="pill" data-val="bottom-left">bottom-left</button>
+                <button class="pill" data-val="bottom-center">bottom-center</button>
+                <button class="pill" data-val="top">top</button>
+                <button class="pill" data-val="center">center</button>
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Motion</div>
+              <div class="pills" data-group="motion" role="group" aria-label="Motion preset">
+                <button class="pill" data-val="smooth">smooth</button>
+                <button class="pill" data-val="bouncy">bouncy</button>
+                <button class="pill" data-val="subtle">subtle</button>
+                <button class="pill" data-val="snappy">snappy</button>
+              </div>
+            </div>
+
+            <div class="builder-group">
+              <span class="builder-group-title">Appearance</span>
+              <span class="builder-group-desc">Theme, presets &amp; colors</span>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Theme</div>
+              <div class="pills" data-group="theme" role="group" aria-label="Theme">
+                <button class="pill" data-val="light">light</button>
+                <button class="pill" data-val="dark">dark</button>
+                <button class="pill" data-val="auto">auto</button>
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Theme Preset</div>
+              <div class="pills" data-group="preset" role="group" aria-label="Theme preset">
+                <button class="pill" data-val="none">default</button>
+                <button class="pill" data-val="minimal">minimal</button>
+                <button class="pill" data-val="soft">soft</button>
+                <button class="pill" data-val="glass">glass</button>
+                <button class="pill" data-val="high-contrast">contrast</button>
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Style</div>
+              <div class="stack">
+                <div class="color-row">
+                  <span class="color-row-label">Accent</span>
+                  <div class="color-group">
+                    <input type="color" class="color-input" id="accentColor" value="#4f46e5" aria-label="Accent color" />
+                    <input class="input color-hex" id="accentHex" value="#4f46e5" aria-label="Accent color hex" />
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <span class="toggle-row-label">Advanced colors</span>
+                  <button class="toggle" data-toggle="advColors" role="switch" aria-checked="false" aria-label="Advanced colors"><span class="toggle-knob"></span></button>
+                </div>
+                <div data-show="advColors" class="stack">
+                  <div class="color-row">
+                    <span class="color-row-label">Background</span>
+                    <div class="color-group">
+                      <input type="color" class="color-input" data-color="bg" value="#ffffff" aria-label="Background color" />
+                      <input class="input color-hex" data-colorhex="bg" value="#ffffff" aria-label="Background color hex" />
+                    </div>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-row-label">Text</span>
+                    <div class="color-group">
+                      <input type="color" class="color-input" data-color="fg" value="#1a1a23" aria-label="Text color" />
+                      <input class="input color-hex" data-colorhex="fg" value="#1a1a23" aria-label="Text color hex" />
+                    </div>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-row-label">Surface</span>
+                    <div class="color-group">
+                      <input type="color" class="color-input" data-color="surface" value="#f6f7fb" aria-label="Surface color" />
+                      <input class="input color-hex" data-colorhex="surface" value="#f6f7fb" aria-label="Surface color hex" />
+                    </div>
+                  </div>
+                  <div class="color-row">
+                    <span class="color-row-label">Border</span>
+                    <div class="color-group">
+                      <input type="color" class="color-input" data-color="border" value="#e6e7ee" aria-label="Border color" />
+                      <input class="input color-hex" data-colorhex="border" value="#e6e7ee" aria-label="Border color hex" />
+                    </div>
+                  </div>
+                </div>
+                <div class="slider-item">
+                  <div class="slider-head"><span class="slider-label">Corner radius</span><span class="slider-val" id="radiusVal">16px</span></div>
+                  <input type="range" class="slider" id="radius" min="0" max="24" step="1" value="16" aria-label="Corner radius" />
+                </div>
+                <div class="slider-item">
+                  <div class="slider-head"><span class="slider-label">Max width</span><span class="slider-val" id="maxWidthVal">384px</span></div>
+                  <input type="range" class="slider" id="maxWidth" min="280" max="520" step="4" value="384" aria-label="Max width" />
+                </div>
+              </div>
+            </div>
+
+            <div class="builder-group">
+              <span class="builder-group-title">Behavior &amp; closing</span>
+              <span class="builder-group-desc">Follow-up, badge &amp; thank-you</span>
+            </div>
+
+            <div class="builder-row">
+              <div class="toggle-row">
+                <span class="toggle-row-label">Open-text follow-up</span>
+                <button class="toggle" data-toggle="followUp" role="switch" aria-checked="true" aria-label="Open-text follow-up"><span class="toggle-knob"></span></button>
+              </div>
+              <div data-show="followUp" style="margin-top:10px">
+                <input class="input" id="followUpText" placeholder="Custom prompt (optional; blank uses smart branching)" aria-label="Follow-up prompt" />
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <div class="toggle-row">
+                <span class="toggle-row-label">“Made with” badge</span>
+                <button class="toggle" data-toggle="badge" role="switch" aria-checked="false" aria-label="Made with badge"><span class="toggle-knob"></span></button>
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <div class="builder-label">Thank-you &amp; dismiss</div>
+              <div class="stack">
+                <input class="input" id="thankTitle" placeholder="Thank-you title…" aria-label="Thank-you title" />
+                <input class="input" id="thankDesc" placeholder="Thank-you description…" aria-label="Thank-you description" />
+                <div class="slider-item">
+                  <div class="slider-head"><span class="slider-label">Auto-dismiss</span><span class="slider-val" id="autoVal">3.5s</span></div>
+                  <input type="range" class="slider" id="autoDismiss" min="0" max="10000" step="500" value="3500" aria-label="Auto-dismiss delay" />
+                </div>
+                <span class="field-hint">Auto-dismiss of <span class="inline-code">0</span> keeps the thank-you until the user closes it.</span>
+              </div>
+            </div>
+
+            <div class="builder-row">
+              <button class="fire-btn" id="fireBtn">Fire Widget<kbd class="fire-kbd" aria-hidden="true">⌘↵</kbd></button>
+            </div>
+
+            <div class="builder-code">
+              <button class="code-copy-btn" id="codeCopy">Copy</button>
+              <pre><code id="code"></code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Inline + Log ===== -->
+      <div class="panels">
+        <div class="panel">
+          <h3>Inline “Helpful?”, embedded in content</h3>
+          <div id="helpful"></div>
+        </div>
+        <div class="panel">
+          <h3>Event log</h3>
+          <div id="log"><span class="empty">Waiting for interactions…</span></div>
+        </div>
+      </div>
+
+      <!-- ===== Docs ===== -->
+      <div class="docs" id="docs">
+        <div class="docs-header">
+          <h2>Documentation</h2>
+          <p>Everything you need to drop polite, delightful feedback widgets into your app.</p>
+        </div>
+
+        <div class="doc-section">
+          <div class="doc-section-label"><div class="doc-number">01</div><h3>Quick Start</h3></div>
+          <div class="doc-content">
+            <p>One call per widget. Polite defaults: nothing auto-fires on load.</p>
+            <pre><code>import { soft } from 'soft-feedback'
+// No CSS import needed; styles live inside the widget's Shadow DOM.
+
+soft.csat({
+  trigger: { type: 'event', name: 'ticket_resolved', delayMs: 800 },
+  onSubmit: (p) =&gt; fetch('/api/feedback', { method: 'POST', body: JSON.stringify(p) }),
+})
+
+// Fire the trigger whenever the moment is right:
+soft.track('ticket_resolved')</code></pre>
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <div class="doc-section-label"><div class="doc-number">02</div><h3>Widgets</h3></div>
+          <div class="doc-content">
+            <div class="table-scroll">
+              <table class="prop-table">
+                <thead><tr><th>Method</th><th>Metric</th><th>Default display</th></tr></thead>
+                <tbody>
+                  <tr><td>soft.csat</td><td>CSAT</td><td>emoji-dial (hero, draggable)</td></tr>
+                  <tr><td>soft.nps</td><td>NPS</td><td>0–10 number scale</td></tr>
+                  <tr><td>soft.ces</td><td>CES</td><td>1–7 number scale</td></tr>
+                  <tr><td>soft.reaction</td><td>CSAT</td><td>one-tap emoji</td></tr>
+                  <tr><td>soft.helpful</td><td>CSAT</td><td>inline thumbs</td></tr>
+                  <tr><td>soft.pmf</td><td>PMF</td><td>Sean Ellis choice</td></tr>
+                  <tr><td>soft.churn</td><td>custom</td><td>exit reason picker</td></tr>
+                  <tr><td>soft.tab</td><td>custom</td><td>always-on feedback tab</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <div class="doc-section-label"><div class="doc-number">03</div><h3>Render &amp; Motion</h3></div>
+          <div class="doc-content">
+            <div class="table-scroll">
+              <table class="prop-table">
+                <thead><tr><th>Option</th><th>Values</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>render.pattern</td><td>popover · inline · modal · banner · tab</td><td>How the widget mounts</td></tr>
+                  <tr><td>render.position</td><td>bottom-right/left/center · top · center</td><td>Popover placement</td></tr>
+                  <tr><td>render.motion</td><td>smooth · bouncy · subtle · snappy</td><td>Spring feel of the morph</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <div class="doc-section-label"><div class="doc-number">04</div><h3>Appearance Tokens</h3></div>
+          <div class="doc-content">
+            <p>White-label by default. Override any <span class="inline-code">--sf-*</span> token through <span class="inline-code">appearance.tokens</span>; a single override re-skins the whole widget.</p>
+            <div class="table-scroll">
+              <table class="prop-table">
+                <thead><tr><th>Token</th><th>Default (light)</th><th>What</th></tr></thead>
+                <tbody>
+                  <tr><td>color-accent</td><td>#4f46e5</td><td>Primary / interactive color</td></tr>
+                  <tr><td>color-bg</td><td>#ffffff</td><td>Card background</td></tr>
+                  <tr><td>color-fg</td><td>#1a1a23</td><td>Text color</td></tr>
+                  <tr><td>color-surface</td><td>#f6f7fb</td><td>Inset surfaces (options, inputs)</td></tr>
+                  <tr><td>color-border</td><td>#e6e7ee</td><td>Borders</td></tr>
+                  <tr><td>radius</td><td>16px</td><td>Card corner radius</td></tr>
+                  <tr><td>max-width (appearance.maxWidth)</td><td>384</td><td>Card width in px</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Built-in presets: <span class="inline-code">minimal</span>, <span class="inline-code">soft</span>, <span class="inline-code">glass</span>, <span class="inline-code">high-contrast</span>. Spread one into <span class="inline-code">appearance.tokens</span>.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Footer ===== -->
+      <footer class="site-footer">
+        <p><b>soft-feedback</b> · headless · white-label · framework-agnostic · accessible · MIT.</p>
+      </footer>
+    </div>
+
+    <!-- The whole library, one file, no CSS import (styles live in Shadow DOM). -->
+    <script src="../../packages/core/dist/index.global.js"></script>
+    <script>
+      // ---- Built-in theme presets (mirror of packages/core/src/theme/presets.ts) ----
+      const PRESETS = {
+        none: {},
+        minimal: { 'color-accent': '#111827', 'color-accent-fg': '#ffffff', 'color-surface': '#ffffff', 'color-border': '#ececef', 'radius': '8px', 'radius-sm': '6px' },
+        soft: { 'color-accent': '#6366f1', 'color-surface': '#f5f5ff', 'color-border': '#e6e6f5', 'radius': '18px', 'radius-sm': '12px' },
+        glass: { 'color-bg': 'rgba(255,255,255,0.72)', 'color-surface': 'rgba(255,255,255,0.45)', 'color-border': 'rgba(255,255,255,0.6)', 'color-accent': '#7c3aed', 'radius': '20px', 'radius-sm': '13px' },
+        'high-contrast': { 'color-bg': '#ffffff', 'color-fg': '#000000', 'color-muted': '#1f1f1f', 'color-accent': '#0000ee', 'color-border': '#000000', 'color-surface': '#ffffff', 'radius': '6px', 'radius-sm': '4px' },
+      };
+
+      // ---- Per-widget metadata ----
+      const WIDGETS = {
+        csat:     { kind: 'rating', display: 'emoji-dial', q: 'How would you rate your experience?' },
+        nps:      { kind: 'rating', display: 'number',     q: 'How likely are you to recommend us to a friend or colleague?' },
+        ces:      { kind: 'rating', display: 'number',     q: 'How easy was it to complete your task?' },
+        reaction: { kind: 'rating', display: 'emoji',      q: 'How do you feel about this?' },
+        helpful:  { kind: 'rating', display: 'thumbs',     q: 'Was this helpful?' },
+        pmf:      { kind: 'choice', display: null,         q: 'How would you feel if you could no longer use this product?' },
+        churn:    { kind: 'choice', display: null,         q: "What's the main reason you're leaving?" },
+        tab:      { kind: 'choice', display: null,         q: 'What kind of feedback do you have?' },
+      };
+
+      const DEFAULTS = {
+        widget: 'csat', question: '', display: 'emoji-dial', pattern: 'popover', position: 'bottom-right',
+        motion: 'bouncy', theme: 'light', preset: 'none',
+        accent: '#4f46e5', advColors: false, bg: '#ffffff', fg: '#1a1a23', surface: '#f6f7fb', border: '#e6e7ee',
+        radius: 16, maxWidth: 384, followUp: true, followUpText: '', badge: false,
+        thankTitle: '', thankDesc: '', autoDismiss: 3500,
+      };
+      const b = { ...DEFAULTS };
+
+      const $ = (s) => document.querySelector(s);
+      const isRating = (w) => WIDGETS[w].kind === 'rating';
+
+      // ---- Event log ----
+      const logEl = $('#log');
+      let firstLog = true;
+      function log(e) {
+        if (firstLog) { logEl.replaceChildren(); firstLog = false; }
+        const row = document.createElement('div');
+        row.className = 'log-row';
+        const ts = document.createElement('span'); ts.className = 'ts'; ts.textContent = new Date().toLocaleTimeString();
+        const pill = document.createElement('span'); pill.className = 'log-pill ' + e.type; pill.textContent = e.type;
+        const meta = document.createElement('span'); meta.className = 'meta';
+        const score = e.payload && e.payload.score ? ' · ' + JSON.stringify(e.payload.score) : '';
+        const resp = e.payload && e.payload.responses ? ' · ' + JSON.stringify(e.payload.responses) : '';
+        meta.textContent = e.surveyId.replace(/^sf:/, '') + resp + score;
+        row.append(ts, pill, meta);
+        logEl.prepend(row);
+        while (logEl.childElementCount > 40) logEl.lastElementChild.remove();
+      }
+
+      softFeedback.init({ onEvent: log });
+
+      // ---- Build the live options object from current builder state ----
+      function currentTokens() {
+        const t = { ...PRESETS[b.preset] };
+        if (b.accent.toLowerCase() !== '#4f46e5') t['color-accent'] = b.accent;
+        if (b.advColors) {
+          t['color-bg'] = b.bg; t['color-fg'] = b.fg; t['color-surface'] = b.surface; t['color-border'] = b.border;
+        }
+        if (b.radius !== 16) { t['radius'] = b.radius + 'px'; t['radius-sm'] = Math.max(2, Math.round(b.radius * 0.7)) + 'px'; }
+        return t;
+      }
+
+      function buildOptions() {
+        const opts = {};
+        const meta = WIDGETS[b.widget];
+        if (b.question.trim()) opts.question = b.question.trim();
+        if (meta.kind === 'rating' && b.display !== meta.display) opts.display = b.display;
+
+        const render = { pattern: b.pattern, motion: b.motion };
+        if (b.pattern === 'popover') render.position = b.position;
+        opts.render = render;
+
+        const appearance = { theme: b.theme };
+        const tokens = currentTokens();
+        if (Object.keys(tokens).length) appearance.tokens = tokens;
+        if (b.maxWidth !== 384) appearance.maxWidth = b.maxWidth;
+        if (b.badge) appearance.badge = true;
+        opts.appearance = appearance;
+
+        if (!b.followUp) opts.followUp = false;
+        else if (b.followUpText.trim()) opts.followUp = b.followUpText.trim();
+
+        const thankYou = {};
+        if (b.thankTitle.trim()) thankYou.title = b.thankTitle.trim();
+        if (b.thankDesc.trim()) thankYou.description = b.thankDesc.trim();
+        const closing = {};
+        if (Object.keys(thankYou).length) closing.thankYou = thankYou;
+        if (b.autoDismiss !== 3500) closing.autoDismissMs = b.autoDismiss;
+        if (Object.keys(closing).length) opts.closing = closing;
+
+        return opts;
+      }
+
+      // ---- Fire the configured widget ----
+      let lastController = null;
+      function fire() {
+        const opts = buildOptions();
+        opts.onSubmit = (p) => console.log('onSubmit', p);
+        try { lastController && lastController.destroy && lastController.destroy(); } catch (_) {}
+        lastController = softFeedback[b.widget](opts);
+        lastController.show(true);
+      }
+
+      // ---- Quick-list buttons: fire a widget with the current look & feel ----
+      document.querySelectorAll('[data-fire]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const w = btn.dataset.fire;
+          const appearance = { theme: b.theme };
+          const tokens = currentTokens();
+          if (Object.keys(tokens).length) appearance.tokens = tokens;
+          softFeedback[w]({ appearance, render: { motion: b.motion }, onSubmit: (p) => console.log('onSubmit', p) }).show(true);
+        });
+      });
+
+      // ---- Generated code ----
+      function fmtValue(v, indent) {
+        if (typeof v === 'string') return "'" + v.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'";
+        if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+        if (Array.isArray(v)) return '[' + v.map((x) => fmtValue(x, indent)).join(', ') + ']';
+        if (v && typeof v === 'object') return fmtObject(v, indent);
+        return String(v);
+      }
+      function fmtObject(obj, indent) {
+        const keys = Object.keys(obj);
+        if (keys.length === 0) return '{}';
+        const pad = '  '.repeat(indent + 1);
+        const lines = keys.map((k) => {
+          const key = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) ? k : "'" + k + "'";
+          return pad + key + ': ' + fmtValue(obj[k], indent + 1) + ',';
+        });
+        return '{\n' + lines.join('\n') + '\n' + '  '.repeat(indent) + '}';
+      }
+      function generateCode() {
+        const opts = buildOptions();
+        opts.onSubmit = '__FN__';
+        let body = fmtObject(opts, 0).replace("'__FN__'", '(p) => console.log(p)');
+        return "import { soft } from 'soft-feedback'\n\nsoft." + b.widget + '(' + body + ').show(true)';
+      }
+
+      // ---- Sync UI to state ----
+      function syncActive(group) {
+        const wrap = document.querySelector('[data-group="' + group + '"]');
+        if (!wrap) return;
+        wrap.querySelectorAll('button[data-val]').forEach((btn) => {
+          const on = btn.dataset.val === String(b[group]);
+          btn.dataset.active = on ? 'true' : 'false';
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+      function syncToggle(key) {
+        const btn = document.querySelector('[data-toggle="' + key + '"]');
+        if (!btn) return;
+        btn.dataset.on = b[key] ? 'true' : 'false';
+        btn.setAttribute('aria-checked', b[key] ? 'true' : 'false');
+      }
+      function syncVisibility() {
+        document.querySelectorAll('[data-show]').forEach((el) => {
+          const cond = el.dataset.show;
+          let visible = true;
+          if (cond === 'rating') visible = isRating(b.widget);
+          else if (cond === 'position') visible = b.pattern === 'popover';
+          else if (cond === 'advColors') visible = b.advColors;
+          else if (cond === 'followUp') visible = b.followUp;
+          el.classList.toggle('is-hidden', !visible);
+          el.style.display = (!visible && !el.classList.contains('builder-row')) ? 'none' : '';
+          if (el.classList.contains('builder-row')) el.classList.toggle('is-hidden', !visible);
+        });
+      }
+      function sync() {
+        ['widget', 'display', 'pattern', 'position', 'motion', 'theme', 'preset'].forEach(syncActive);
+        ['advColors', 'followUp', 'badge'].forEach(syncToggle);
+        syncVisibility();
+        $('#question').placeholder = WIDGETS[b.widget].q;
+        $('#radiusVal').textContent = b.radius + 'px';
+        $('#maxWidthVal').textContent = b.maxWidth + 'px';
+        $('#autoVal').textContent = b.autoDismiss === 0 ? 'never' : (b.autoDismiss / 1000).toFixed(1) + 's';
+        $('#code').textContent = generateCode();
+      }
+
+      // ---- Wire pill groups ----
+      document.querySelectorAll('[data-group]').forEach((group) => {
+        const key = group.dataset.group;
+        group.querySelectorAll('button[data-val]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            b[key] = btn.dataset.val;
+            // Switching widget resets the display to that widget's default.
+            if (key === 'widget' && isRating(b.widget)) b.display = WIDGETS[b.widget].display;
+            sync();
+          });
+        });
+      });
+
+      // ---- Wire toggles ----
+      document.querySelectorAll('[data-toggle]').forEach((btn) => {
+        btn.addEventListener('click', () => { b[btn.dataset.toggle] = !b[btn.dataset.toggle]; sync(); });
+      });
+
+      // ---- Wire text / range inputs ----
+      const bind = (id, key, transform) => {
+        const el = $('#' + id);
+        if (!el) return;
+        el.addEventListener('input', () => { b[key] = transform ? transform(el.value) : el.value; sync(); });
+      };
+      bind('question', 'question');
+      bind('followUpText', 'followUpText');
+      bind('thankTitle', 'thankTitle');
+      bind('thankDesc', 'thankDesc');
+      bind('radius', 'radius', Number);
+      bind('maxWidth', 'maxWidth', Number);
+      bind('autoDismiss', 'autoDismiss', Number);
+
+      // ---- Accent color (picker <-> hex) ----
+      const accentColor = $('#accentColor'), accentHex = $('#accentHex');
+      accentColor.addEventListener('input', () => { b.accent = accentColor.value; accentHex.value = accentColor.value; sync(); });
+      accentHex.addEventListener('input', () => { b.accent = accentHex.value; if (/^#[0-9a-fA-F]{6}$/.test(accentHex.value)) accentColor.value = accentHex.value; sync(); });
+
+      // ---- Advanced color pickers (picker <-> hex) ----
+      document.querySelectorAll('[data-color]').forEach((picker) => {
+        const key = picker.dataset.color;
+        const hex = document.querySelector('[data-colorhex="' + key + '"]');
+        picker.addEventListener('input', () => { b[key] = picker.value; hex.value = picker.value; sync(); });
+        hex.addEventListener('input', () => { b[key] = hex.value; if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) picker.value = hex.value; sync(); });
+      });
+
+      // ---- Fire button + keyboard shortcut ----
+      $('#fireBtn').addEventListener('click', fire);
+      window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); fire(); }
+      });
+
+      // ---- Reset ----
+      $('#resetBtn').addEventListener('click', () => {
+        Object.assign(b, DEFAULTS);
+        $('#question').value = '';
+        $('#followUpText').value = '';
+        $('#thankTitle').value = '';
+        $('#thankDesc').value = '';
+        $('#radius').value = 16;
+        $('#maxWidth').value = 384;
+        $('#autoDismiss').value = 3500;
+        accentColor.value = '#4f46e5'; accentHex.value = '#4f46e5';
+        document.querySelectorAll('[data-color]').forEach((p) => { p.value = DEFAULTS[p.dataset.color]; });
+        document.querySelectorAll('[data-colorhex]').forEach((h) => { h.value = DEFAULTS[h.dataset.colorhex]; });
+        sync();
+      });
+
+      // ---- Surprise me: randomize the config for quick exploration ----
+      function randomOf(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+      function randHex() {
+        const c = () => Math.floor(40 + Math.random() * 180).toString(16).padStart(2, '0');
+        return '#' + c() + c() + c();
+      }
+      $('#surpriseBtn').addEventListener('click', () => {
+        ['widget', 'pattern', 'position', 'motion', 'theme', 'preset'].forEach((g) => {
+          const vals = [...document.querySelectorAll('[data-group="' + g + '"] [data-val]')].map((x) => x.dataset.val);
+          if (vals.length) b[g] = randomOf(vals);
+        });
+        if (isRating(b.widget)) b.display = randomOf(['number', 'emoji', 'stars', 'emoji-dial', 'thumbs']);
+        b.accent = randHex();
+        accentColor.value = b.accent; accentHex.value = b.accent;
+        b.radius = Math.floor(Math.random() * 25);
+        $('#radius').value = b.radius;
+        sync();
+      });
+
+      // ---- Copy buttons ----
+      function copyText(text, btn, original) {
+        navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      }
+      $('#codeCopy').addEventListener('click', () => copyText($('#code').textContent, $('#codeCopy'), 'Copy'));
+      $('#installCopy').addEventListener('click', () => { navigator.clipboard.writeText('npm i soft-feedback'); });
+
+      // ---- Inline "Helpful?" widget (re-mounts on motion / theme change) ----
+      let helpful;
+      function mountHelpful() {
+        try { helpful && helpful.destroy(); } catch (_) {}
+        $('#helpful').replaceChildren();
+        const appearance = { theme: b.theme };
+        const tokens = currentTokens();
+        if (Object.keys(tokens).length) appearance.tokens = tokens;
+        helpful = softFeedback.helpful({ render: { selector: '#helpful', motion: b.motion }, appearance });
+        helpful.show(true);
+      }
+
+      // ---- Always-on feedback tab ----
+      softFeedback.tab({ appearance: { theme: b.theme }, render: { motion: b.motion } });
+
+      sync();
+      mountHelpful();
+    </script>
+  </body>
+</html>
