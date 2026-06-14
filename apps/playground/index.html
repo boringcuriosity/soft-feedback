@@ -91,7 +91,9 @@
       @media (max-width: 640px) { .header-nav .nav-link:not(.is-anchor) { display: none; } }
 
       /* ===== Hero ===== */
-      .hero { padding: 3.5rem 0 3rem; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3rem; align-items: center; }
+      .hero { padding: 5.5rem 0 5rem; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3rem; align-items: center; }
+      .try-link { display: inline-flex; align-items: center; background: var(--text); color: var(--bg); border-radius: 100px; padding: 8px 16px; font-size: 0.8rem; font-weight: 600; text-decoration: none; transition: opacity 0.15s ease; }
+      .try-link:hover { opacity: 0.85; }
       .hero-left { min-width: 0; }
       .hero-demo { min-width: 0; }
       .hero-demo-card {
@@ -294,7 +296,7 @@
       @media (max-width: 640px) {
         .root { padding: 0 1.25rem; }
         .header-inner { padding: 0 1.25rem; }
-        .hero { padding: 2.5rem 0 2rem; }
+        .hero { padding: 3.5rem 0 3rem; }
         .hero h1 { font-size: 2.5rem; }
         .hero-description { font-size: 0.95rem; }
         .builder-card { padding: 1.25rem; }
@@ -340,6 +342,7 @@
           <a class="nav-link is-anchor" href="#widgets">Widgets</a>
           <a class="nav-link is-anchor" href="#builder">Builder</a>
           <a class="nav-link is-anchor" href="#docs">Docs</a>
+          <a class="nav-link is-anchor" href="../dashboard/index.html">Dashboard ↗</a>
           <a class="nav-link header-github" href="https://github.com/boringcuriosity/soft-feedback" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.7 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .4.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
             GitHub
@@ -712,7 +715,20 @@ soft.track('ticket_resolved')</code></pre>
                 </tbody>
               </table>
             </div>
-            <p>Built-in presets: <span class="inline-code">minimal</span>, <span class="inline-code">soft</span>, <span class="inline-code">glass</span>, <span class="inline-code">high-contrast</span>. Spread one into <span class="inline-code">appearance.tokens</span>.</p>
+            <p>Built-in presets: <span class="inline-code">minimal</span>, <span class="inline-code">soft</span>, <span class="inline-code">glass</span>, <span class="inline-code">glass-dark</span>, <span class="inline-code">high-contrast</span>. Spread one into <span class="inline-code">appearance.tokens</span>.</p>
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <div class="doc-section-label"><div class="doc-number">05</div><h3>Dashboard</h3></div>
+          <div class="doc-content">
+            <p>Responses you collect ship with a free, <b>local-first results dashboard</b> — it visualizes the exact <span class="inline-code">onSubmit</span> payloads you store and scores NPS, CSAT, CES &amp; PMF client-side, with trends, distributions and verbatims. Nothing leaves the browser.</p>
+            <pre><code>// store the payload as-is, anywhere you like
+soft.csat({ onSubmit: (p) =&gt; db.feedback.insert(p) })</code></pre>
+            <p>Then point the dashboard at your data: hit <b>Connect</b> and paste any URL that returns your <span class="inline-code">ResponsePayload[]</span> (Supabase, Firebase, your API, a JSON file), drag in a JSON export, or just answer a few widgets here — the playground writes to the same browser store the dashboard reads.</p>
+            <div class="doc-try-buttons">
+              <a class="try-link" href="../dashboard/index.html">Open the dashboard ↗</a>
+            </div>
           </div>
         </div>
       </div>
