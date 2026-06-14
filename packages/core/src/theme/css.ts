@@ -162,6 +162,10 @@ export const BASE_CSS = `
 .soft-foot:empty { display: none; }
 /* Inline optional comment revealed after a last-step rating; full-width above the button. */
 .soft-inline-comment { width: 100%; min-height: 64px; margin: 0; animation: sf-rise .28s ease both; }
+.soft-inline-follow-label {
+  display: block; margin: 0 0 8px; font-size: 0.92em; font-weight: 600;
+  color: var(--sf-color-fg); animation: sf-rise .28s ease both;
+}
 .soft-btn {
   min-height: 44px; min-width: 88px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

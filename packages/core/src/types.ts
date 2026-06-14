@@ -41,6 +41,17 @@ export interface RatingQuestion extends BaseQuestion {
   /** Verbal endpoint anchors — research says always anchor scales. */
   labels?: { min?: string; max?: string };
   midpointLabel?: string;
+  /**
+   * Optional follow-up shown INLINE beneath the rating (same view) once it's answered, rather
+   * than as a separate step. The prompt switches on the score: `lowPrompt` for values `<= threshold`,
+   * `highPrompt` above it. The free-text answer is stored under `id`.
+   */
+  inlineFollowUp?: {
+    id: string;
+    lowPrompt: string;
+    highPrompt: string;
+    threshold: number;
+  };
 }
 
 export interface ChoiceOption {

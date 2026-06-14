@@ -369,6 +369,8 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
   let opened = false;
   let autoDismissTimer: ReturnType<typeof setTimeout> | null = null;
   let cancelTransition: (() => void) | null = null;
+  // Updates the inline follow-up prompt (low/high) to match the current score; set per question.
+  let refreshFollowUp: (() => void) | null = null;
   let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
   // ---- event emission helpers ---------------------------------------------------------------
@@ -446,6 +448,7 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
   function renderFooter(q: Question, isLast: boolean): void {
     flow.footerEl.replaceChildren();
     flow.footerEl.style.display = '';
+    refreshFollowUp = null;
     if (!questionNeedsButton(q)) return;
 
     const isRating = q.type === 'rating';
@@ -455,17 +458,40 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
     const hasValue = runtime.state.responses[q.id] !== undefined;
 
     if (isRating && isLast) {
+      // A score-aware inline follow-up (its prompt switches on the rating) when configured;
+      // otherwise the generic optional comment (e.g. the one-tap reaction widget).
+      const fu = q.type === 'rating' ? q.inlineFollowUp : undefined;
+      const storeId = fu ? fu.id : `${q.id}:comment`;
+
       const comment = document.createElement('textarea');
       comment.className = 'sf-input sf-textarea soft-inline-comment';
       comment.rows = 2;
-      comment.placeholder = 'Anything to add? (optional)';
       comment.setAttribute('part', 'inline-comment');
-      comment.setAttribute('aria-label', 'Optional comment');
-      const existing = runtime.state.responses[`${q.id}:comment`];
+      const existing = runtime.state.responses[storeId];
       if (typeof existing === 'string') comment.value = existing;
       comment.addEventListener('input', () => {
-        runtime.answer(`${q.id}:comment`, comment.value);
+        runtime.answer(storeId, comment.value);
       });
+
+      if (fu) {
+        const label = document.createElement('label');
+        label.className = 'soft-inline-follow-label';
+        const inputId = `${storeId}-input`;
+        comment.id = inputId;
+        label.htmlFor = inputId;
+        comment.placeholder = 'Optional';
+        refreshFollowUp = () => {
+          const v = runtime.state.responses[q.id];
+          const prompt = typeof v === 'number' && v <= fu.threshold ? fu.lowPrompt : fu.highPrompt;
+          label.textContent = prompt;
+          comment.setAttribute('aria-label', prompt);
+        };
+        refreshFollowUp();
+        flow.footerEl.appendChild(label);
+      } else {
+        comment.placeholder = 'Anything to add? (optional)';
+        comment.setAttribute('aria-label', 'Optional comment');
+      }
       flow.footerEl.appendChild(comment);
     }
 
@@ -484,6 +510,7 @@ export function createBaseHost(ctx: RendererContext, opts: BaseHostOptions): Bas
   /** Reveal + enable the rating confirm footer once the user has answered. */
   function enableFooterSubmit(): void {
     flow.footerEl.style.display = '';
+    refreshFollowUp?.(); // sync the inline follow-up prompt to the chosen score
     const btn = flow.footerEl.querySelector<HTMLButtonElement>('button.soft-btn');
     if (btn) btn.disabled = false;
   }

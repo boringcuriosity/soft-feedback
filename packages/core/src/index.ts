@@ -180,6 +180,11 @@ export interface RatingWidgetOptions extends BaseWidgetOptions {
   display?: RatingDisplay;
   scale?: { min: number; max: number };
   labels?: { min?: string; max?: string };
+  /**
+   * Show the open-text follow-up inline beneath the rating (one view), instead of as a
+   * separate step. Defaults to `true`. Set `false` for the classic stepped follow-up.
+   */
+  followUpInline?: boolean;
 }
 
 export interface ChoiceWidgetOptions extends BaseWidgetOptions {
@@ -336,7 +341,29 @@ function ratingWidget(
     defaults.followUpDefault !== undefined && opts.followUp === undefined
       ? { ...opts, followUp: defaults.followUpDefault }
       : opts;
-  const fu = followUp(id, fuOpts, defaults.low, defaults.high, threshold);
+
+  // Inline follow-up (default) keeps the rating + open-text on one view; the classic
+  // stepped follow-up (followUpInline: false) routes to a separate score-branched question.
+  const inline = opts.followUpInline !== false;
+  let extra: Question[] = [];
+  let ratingBranching: Branch[] | undefined;
+  let inlineFollowUp: RatingQuestion['inlineFollowUp'];
+
+  if (inline) {
+    inlineFollowUp =
+      fuOpts.followUp === false
+        ? undefined
+        : {
+            id: `${id}:why`,
+            lowPrompt: typeof fuOpts.followUp === 'string' ? fuOpts.followUp : defaults.low,
+            highPrompt: typeof fuOpts.followUp === 'string' ? fuOpts.followUp : defaults.high,
+            threshold,
+          };
+  } else {
+    const fu = followUp(id, fuOpts, defaults.low, defaults.high, threshold);
+    extra = fu.extra;
+    ratingBranching = fu.ratingBranching;
+  }
 
   const rating: RatingQuestion = {
     id: `${id}:rating`,
@@ -345,10 +372,11 @@ function ratingWidget(
     display: opts.display ?? defaults.display,
     scale,
     labels: opts.labels ?? defaults.labels,
-    ...(fu.ratingBranching ? { branching: fu.ratingBranching } : {}),
+    ...(ratingBranching ? { branching: ratingBranching } : {}),
+    ...(inlineFollowUp ? { inlineFollowUp } : {}),
   };
 
-  const survey = baseSurvey(id, name, metric, [rating, ...fu.extra], opts, defaults.pattern);
+  const survey = baseSurvey(id, name, metric, [rating, ...extra], opts, defaults.pattern);
   return register(survey, opts);
 }
 
