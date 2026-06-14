@@ -323,7 +323,10 @@ export const BASE_CSS = `
 .sf-textarea, .sf-input {
   width: 100%; min-height: 44px; padding: 11px var(--sf-space); font: inherit;
   color: var(--sf-color-fg); background: var(--sf-color-bg);
-  border: 1.5px solid var(--sf-color-border); border-radius: var(--sf-radius-sm);
+  /* A tint of the text colour, not --sf-color-border (which is near-white on glass and
+     left the field looking borderless). Stays visible on light, dark, and glass. */
+  border: 1.5px solid color-mix(in srgb, var(--sf-color-fg) 30%, transparent);
+  border-radius: var(--sf-radius-sm);
   transition: border-color .2s ease, box-shadow .2s ease;
 }
 .sf-textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
