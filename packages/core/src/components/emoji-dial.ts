@@ -113,12 +113,6 @@ export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponen
 
   track.append(ticks, fill, thumb);
 
-  // Visible verbal value label (also serves sighted users — never value-by-color).
-  const valueLabel = document.createElement('div');
-  valueLabel.className = 'sf-dial-value-label';
-  valueLabel.setAttribute('part', 'dial-label');
-  valueLabel.setAttribute('aria-hidden', 'true');
-
   // Endpoint anchors.
   const anchors = document.createElement('div');
   anchors.className = 'sf-dial-anchors';
@@ -131,7 +125,7 @@ export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponen
   hi.textContent = q.labels?.max ?? '';
   anchors.append(lo, hi);
 
-  root.append(face, track, anchors, valueLabel);
+  root.append(face, track, anchors);
 
   /* ----------------------------- value text ----------------------------- */
 
@@ -175,10 +169,8 @@ export function createEmojiDial(ctx: QuestionComponentContext): QuestionComponen
 
   const updateAria = (v: number): void => {
     track.setAttribute('aria-valuenow', String(v));
-    const text = valueText(v);
-    track.setAttribute('aria-valuetext', text);
-    valueLabel.textContent = text;
-    valueLabel.classList.toggle('is-set', value !== undefined);
+    // Screen readers get the verbal value via aria-valuetext; there's no visible value label.
+    track.setAttribute('aria-valuetext', valueText(v));
   };
 
   /* ----------------------------- animation ------------------------------ */

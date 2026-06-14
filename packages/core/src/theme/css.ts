@@ -286,8 +286,6 @@ export const BASE_CSS = `
 .sf-dial-track:focus-visible { outline: none; }
 .sf-dial-track:focus-visible .sf-dial-thumb { outline: 2px solid var(--sf-color-accent); outline-offset: 3px; }
 .sf-dial-anchors { display: flex; justify-content: space-between; width: 100%; font-size: .8rem; color: var(--sf-color-muted); }
-.sf-dial-value-label { min-height: 1.2em; font-weight: 650; color: var(--sf-color-fg); }
-.sf-dial-value-label:not(.is-set) { color: var(--sf-color-muted); font-weight: 500; }
 
 /* ===== Choice =================================================================== */
 .sf-choice-group { display: flex; flex-direction: column; gap: var(--sf-space-sm); }
@@ -536,7 +534,6 @@ export const BASE_CSS = `
   transform: translate(-50%, -50%) scale(1.1);
   box-shadow: 0 5px 14px rgba(20,22,45,.32), 0 0 0 9px var(--_sf-accent-soft);
 }
-.sf-dial-value-label { font-size: .95rem; }
 
 /* ---- Card & header: softer shell, calmer hierarchy ----------------------- */
 .soft-card { border-radius: 18px; padding: 22px 24px 24px; box-shadow: 0 1px 2px rgba(20,22,45,.05), 0 20px 50px -18px rgba(20,22,45,.30); }
